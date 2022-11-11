@@ -13,25 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.android.wearable.wear.wearnotifications;
+package com.example.android.wearable.wear.wearnotifications
 
-import android.app.Notification;
+import androidx.wear.widget.WearableRecyclerView
 
 /**
- * Controller used to instruct main activity to update {@link Notification} based on changes in
- * the {@link CustomRecyclerAdapter} (item selected) which is tied to the
- * {@link android.support.wearable.view.WearableRecyclerView}.
+ * Controller used to instruct main activity to update [Notification] based on changes in
+ * the [CustomRecyclerAdapter] (item selected) which is tied to the
+ * [android.support.wearable.view.WearableRecyclerView].
  */
-
-public class Controller {
-
-    private final StandaloneMainActivity mView;
-
-    Controller(StandaloneMainActivity standaloneMainActivity) {
-        mView = standaloneMainActivity;
-    }
-
-    public void itemSelected(String notificationStyleSelected) {
-        mView.itemSelected(notificationStyleSelected);
+class Controller internal constructor(private val mView: StandaloneMainActivity) {
+    fun itemSelected(notificationStyleSelected: String?) {
+        mView.itemSelected(notificationStyleSelected)
     }
 }

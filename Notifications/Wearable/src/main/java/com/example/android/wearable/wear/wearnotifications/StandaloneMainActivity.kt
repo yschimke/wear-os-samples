@@ -13,174 +13,117 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.android.wearable.wear.wearnotifications;
+package com.example.android.wearable.wear.wearnotifications
 
-import android.app.Activity;
-import android.app.Notification;
-import android.app.PendingIntent;
-import android.content.Intent;
-import android.graphics.BitmapFactory;
-import android.os.Build;
-import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
-import android.widget.FrameLayout;
-
-import com.google.android.material.snackbar.Snackbar;
-
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationCompat.Action;
-import androidx.core.app.NotificationCompat.BigPictureStyle;
-import androidx.core.app.NotificationCompat.BigTextStyle;
-import androidx.core.app.NotificationCompat.InboxStyle;
-import androidx.core.app.NotificationCompat.MessagingStyle;
-import androidx.core.app.NotificationManagerCompat;
-import androidx.core.app.Person;
-import androidx.core.app.RemoteInput;
-import androidx.core.content.ContextCompat;
-import androidx.wear.ambient.AmbientMode;
-import androidx.wear.widget.WearableLinearLayoutManager;
-import androidx.wear.widget.WearableRecyclerView;
-
-import com.example.android.wearable.wear.common.mock.MockDatabase;
-import com.example.android.wearable.wear.common.util.NotificationUtil;
-import com.example.android.wearable.wear.wearnotifications.handlers.BigPictureSocialIntentService;
-import com.example.android.wearable.wear.wearnotifications.handlers.BigPictureSocialMainActivity;
-import com.example.android.wearable.wear.wearnotifications.handlers.BigTextIntentService;
-import com.example.android.wearable.wear.wearnotifications.handlers.BigTextMainActivity;
-import com.example.android.wearable.wear.wearnotifications.handlers.InboxMainActivity;
-import com.example.android.wearable.wear.wearnotifications.handlers.MessagingIntentService;
-import com.example.android.wearable.wear.wearnotifications.handlers.MessagingMainActivity;
+import android.app.Activity
+import android.app.Notification
+import android.app.PendingIntent.FLAG_IMMUTABLE
+import android.app.PendingIntent.FLAG_UPDATE_CURRENT
+import android.app.PendingIntent.getActivity
+import android.app.PendingIntent.getService
+import android.content.Intent
+import android.graphics.BitmapFactory
+import android.os.Bundle
+import android.util.Log
+import android.widget.FrameLayout
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.app.RemoteInput
+import androidx.core.content.ContextCompat
+import androidx.wear.ambient.AmbientMode
+import androidx.wear.widget.WearableLinearLayoutManager
+import androidx.wear.widget.WearableRecyclerView
+import com.example.android.wearable.wear.common.mock.MockDatabase
+import com.example.android.wearable.wear.common.util.NotificationUtil
+import com.example.android.wearable.wear.wearnotifications.handlers.BigPictureSocialIntentService
+import com.example.android.wearable.wear.wearnotifications.handlers.BigPictureSocialMainActivity
+import com.example.android.wearable.wear.wearnotifications.handlers.BigTextIntentService
+import com.example.android.wearable.wear.wearnotifications.handlers.BigTextMainActivity
+import com.example.android.wearable.wear.wearnotifications.handlers.InboxMainActivity
+import com.example.android.wearable.wear.wearnotifications.handlers.MessagingIntentService
+import com.example.android.wearable.wear.wearnotifications.handlers.MessagingMainActivity
+import com.google.android.material.snackbar.Snackbar
 
 /**
- * Demonstrates best practice for {@link NotificationCompat} Notifications created by local
- * standalone Wear apps. All {@link NotificationCompat} examples use
- * {@link NotificationCompat.Style}.
+ * Demonstrates best practice for [NotificationCompat] Notifications created by local
+ * standalone Wear apps. All [NotificationCompat] examples use
+ * [NotificationCompat.Style].
  */
-public class StandaloneMainActivity extends Activity implements
-        AmbientMode.AmbientCallbackProvider {
-
-    private static final String TAG = "StandaloneMainActivity";
-
-    public static final int NOTIFICATION_ID = 888;
-
-    /*
-     * Used to represent each major {@link NotificationCompat.Style} in the
-     * {@link WearableRecyclerView}. These constants are also used in a switch statement when one
-     * of the items is selected to create the appropriate {@link Notification}.
-     */
-    private static final String BIG_TEXT_STYLE = "BIG_TEXT_STYLE";
-    private static final String BIG_PICTURE_STYLE = "BIG_PICTURE_STYLE";
-    private static final String INBOX_STYLE = "INBOX_STYLE";
-    private static final String MESSAGING_STYLE = "MESSAGING_STYLE";
-
-    /*
-    Collection of major {@link NotificationCompat.Style} to create {@link CustomRecyclerAdapter}
-    for {@link WearableRecyclerView}.
-    */
-    private static final String[] NOTIFICATION_STYLES =
-            {BIG_TEXT_STYLE, BIG_PICTURE_STYLE, INBOX_STYLE, MESSAGING_STYLE};
-
-    private NotificationManagerCompat mNotificationManagerCompat;
+class StandaloneMainActivity : Activity(), AmbientMode.AmbientCallbackProvider {
+    private lateinit var mNotificationManagerCompat: NotificationManagerCompat
 
     // Needed for {@link SnackBar} to alert users when {@link Notification} are disabled for app.
-    private FrameLayout mMainFrameLayout;
-    private WearableRecyclerView mWearableRecyclerView;
-    private CustomRecyclerAdapter mCustomRecyclerAdapter;
+    private lateinit var mMainFrameLayout: FrameLayout
+    private lateinit var mWearableRecyclerView: WearableRecyclerView
+    private lateinit var mCustomRecyclerAdapter: CustomRecyclerAdapter
 
     /**
      * Ambient mode controller attached to this display. Used by Activity to see if it is in
      * ambient mode.
      */
-    private AmbientMode.AmbientController mAmbientController;
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        Log.d(TAG, "onCreate()");
-
-        setContentView(R.layout.activity_main);
+    private var mAmbientController: AmbientMode.AmbientController? = null
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        Log.d(TAG, "onCreate()")
+        setContentView(R.layout.activity_main)
 
         // Enables Ambient mode.
-        mAmbientController = AmbientMode.attachAmbientSupport(this);
-
-        mNotificationManagerCompat = NotificationManagerCompat.from(getApplicationContext());
-
-        mMainFrameLayout = findViewById(R.id.mainFrameLayout);
-        mWearableRecyclerView = findViewById(R.id.recycler_view);
+        mAmbientController = AmbientMode.attachAmbientSupport(this)
+        mNotificationManagerCompat = NotificationManagerCompat.from(
+            applicationContext
+        )
+        mMainFrameLayout = findViewById(R.id.mainFrameLayout)
+        mWearableRecyclerView = findViewById(R.id.recycler_view)
 
         // Aligns the first and last items on the list vertically centered on the screen.
-        mWearableRecyclerView.setEdgeItemsCenteringEnabled(true);
+        mWearableRecyclerView.isEdgeItemsCenteringEnabled = true
 
         // Customizes scrolling so items farther away form center are smaller.
-        ScalingScrollLayoutCallback scalingScrollLayoutCallback =
-                new ScalingScrollLayoutCallback();
-        mWearableRecyclerView.setLayoutManager(
-                new WearableLinearLayoutManager(this, scalingScrollLayoutCallback));
+        val scalingScrollLayoutCallback = ScalingScrollLayoutCallback()
+        mWearableRecyclerView.layoutManager =
+            WearableLinearLayoutManager(this, scalingScrollLayoutCallback)
 
         // Improves performance because we know changes in content do not change the layout size of
         // the RecyclerView.
-        mWearableRecyclerView.setHasFixedSize(true);
+        mWearableRecyclerView.setHasFixedSize(true)
 
         // Specifies an adapter (see also next example).
-        mCustomRecyclerAdapter = new CustomRecyclerAdapter(
-                NOTIFICATION_STYLES,
-                // Controller passes selected data from the Adapter out to this Activity to trigger
-                // updates in the UI/Notifications.
-                new Controller(this));
-
-        mWearableRecyclerView.setAdapter(mCustomRecyclerAdapter);
+        mCustomRecyclerAdapter = CustomRecyclerAdapter(
+            NOTIFICATION_STYLES,  // Controller passes selected data from the Adapter out to this Activity to trigger
+            // updates in the UI/Notifications.
+            Controller(this)
+        )
+        mWearableRecyclerView.adapter = mCustomRecyclerAdapter
     }
 
     // Called by WearableRecyclerView when an item is selected (check onCreate() for
     // initialization).
-    public void itemSelected(String data) {
-
-        Log.d(TAG, "itemSelected()");
-
-        boolean areNotificationsEnabled = mNotificationManagerCompat.areNotificationsEnabled();
+    fun itemSelected(data: String?) {
+        Log.d(TAG, "itemSelected()")
+        val areNotificationsEnabled = mNotificationManagerCompat.areNotificationsEnabled()
 
         // If notifications are disabled, allow user to enable.
         if (!areNotificationsEnabled) {
             // Because the user took an action to create a notification, we create a prompt to let
             // the user re-enable notifications for this application again.
-            Snackbar snackbar = Snackbar
-                    .make(
-                            mMainFrameLayout,
-                            "", // Not enough space for both text and action text.
-                            Snackbar.LENGTH_LONG)
-                    .setAction("Enable Notifications", new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            // Links to this app's notification settings.
-                            openNotificationSettingsForApp();
-                        }
-                    });
-            snackbar.show();
-            return;
+            val snackbar = Snackbar
+                .make(
+                    mMainFrameLayout,
+                    "",  // Not enough space for both text and action text.
+                    Snackbar.LENGTH_LONG
+                )
+                .setAction("Enable Notifications") { // Links to this app's notification settings.
+                    openNotificationSettingsForApp()
+                }
+            snackbar.show()
+            return
         }
-
-        String notificationStyle = data;
-
-        switch (notificationStyle) {
-            case BIG_TEXT_STYLE:
-                generateBigTextStyleNotification();
-                break;
-
-            case BIG_PICTURE_STYLE:
-                generateBigPictureStyleNotification();
-                break;
-
-            case INBOX_STYLE:
-                generateInboxStyleNotification();
-                break;
-
-            case MESSAGING_STYLE:
-                generateMessagingStyleNotification();
-                break;
-
-            default:
-                // continue below.
+        when (data) {
+            BIG_TEXT_STYLE -> generateBigTextStyleNotification()
+            BIG_PICTURE_STYLE -> generateBigPictureStyleNotification()
+            INBOX_STYLE -> generateInboxStyleNotification()
+            MESSAGING_STYLE -> generateMessagingStyleNotification()
+            else -> {}
         }
     }
 
@@ -201,9 +144,8 @@ public class StandaloneMainActivity extends Activity implements
      * If you want to see the new behavior, please review the generateBigPictureStyleNotification()
      * and generateMessagingStyleNotification() methods.
      */
-    private void generateBigTextStyleNotification() {
-
-        Log.d(TAG, "generateBigTextStyleNotification()");
+    private fun generateBigTextStyleNotification() {
+        Log.d(TAG, "generateBigTextStyleNotification()")
 
         // Main steps for building a BIG_TEXT_STYLE notification:
         //      0. Get your data
@@ -214,35 +156,30 @@ public class StandaloneMainActivity extends Activity implements
         //      5. Build and issue the notification
 
         // 0. Get your data (everything unique per Notification).
-        MockDatabase.BigTextStyleReminderAppData bigTextStyleReminderAppData =
-                MockDatabase.getBigTextStyleData();
+        val bigTextStyleReminderAppData = MockDatabase.getBigTextStyleData()
 
         // 1. Create/Retrieve Notification Channel for O and beyond devices (26+).
-        String notificationChannelId =
-                NotificationUtil.createNotificationChannel(this, bigTextStyleReminderAppData);
+        val notificationChannelId =
+            NotificationUtil.createNotificationChannel(this, bigTextStyleReminderAppData)!!
 
         // 2. Build the BIG_TEXT_STYLE
-        BigTextStyle bigTextStyle = new NotificationCompat.BigTextStyle()
-                // Overrides ContentText in the big form of the template.
-                .bigText(bigTextStyleReminderAppData.getBigText())
-                // Overrides ContentTitle in the big form of the template.
-                .setBigContentTitle(bigTextStyleReminderAppData.getBigContentTitle())
-                // Summary line after the detail section in the big form of the template
+        val bigTextStyle =
+            NotificationCompat.BigTextStyle() // Overrides ContentText in the big form of the template.
+                .bigText(bigTextStyleReminderAppData.bigText) // Overrides ContentTitle in the big form of the template.
+                .setBigContentTitle(bigTextStyleReminderAppData.bigContentTitle) // Summary line after the detail section in the big form of the template
                 // Note: To improve readability, don't overload the user with info. If Summary Text
                 // doesn't add critical information, you should skip it.
-                .setSummaryText(bigTextStyleReminderAppData.getSummaryText());
+                .setSummaryText(bigTextStyleReminderAppData.summaryText)
 
 
         // 3. Set up main Intent for notification.
-        Intent mainIntent = new Intent(this, BigTextMainActivity.class);
-
-        PendingIntent mainPendingIntent =
-                PendingIntent.getActivity(
-                        this,
-                        0,
-                        mainIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT
-                );
+        val mainIntent = Intent(this, BigTextMainActivity::class.java)
+        val mainPendingIntent = getActivity(
+            this,
+            0,
+            mainIntent,
+            FLAG_UPDATE_CURRENT
+        )
 
 
         // 4. Create additional Actions (Intents) for the Notification.
@@ -250,28 +187,38 @@ public class StandaloneMainActivity extends Activity implements
         // In our case, we create two additional actions: a Snooze action and a Dismiss action.
 
         // Snooze Action.
-        Intent snoozeIntent = new Intent(this, BigTextIntentService.class);
-        snoozeIntent.setAction(BigTextIntentService.ACTION_SNOOZE);
-
-        PendingIntent snoozePendingIntent = PendingIntent.getService(this, 0, snoozeIntent, 0);
-        NotificationCompat.Action snoozeAction =
-                new NotificationCompat.Action.Builder(
-                        R.drawable.ic_alarm_white_48dp,
-                        "Snooze",
-                        snoozePendingIntent)
-                        .build();
+        val snoozeIntent = Intent(this, BigTextIntentService::class.java)
+        snoozeIntent.action =
+            BigTextIntentService.ACTION_SNOOZE
+        val snoozePendingIntent = getService(
+            this,
+            0,
+            snoozeIntent,
+            FLAG_IMMUTABLE
+        )
+        val snoozeAction = NotificationCompat.Action.Builder(
+            R.drawable.ic_alarm_white_48dp,
+            "Snooze",
+            snoozePendingIntent
+        )
+            .build()
 
         // Dismiss Action.
-        Intent dismissIntent = new Intent(this, BigTextIntentService.class);
-        dismissIntent.setAction(BigTextIntentService.ACTION_DISMISS);
-
-        PendingIntent dismissPendingIntent = PendingIntent.getService(this, 0, dismissIntent, 0);
-        NotificationCompat.Action dismissAction =
-                new NotificationCompat.Action.Builder(
-                        R.drawable.ic_cancel_white_48dp,
-                        "Dismiss",
-                        dismissPendingIntent)
-                        .build();
+        val dismissIntent = Intent(this, BigTextIntentService::class.java)
+        dismissIntent.action =
+            BigTextIntentService.ACTION_DISMISS
+        val dismissPendingIntent = getService(
+            this,
+            0,
+            dismissIntent,
+            FLAG_IMMUTABLE
+        )
+        val dismissAction = NotificationCompat.Action.Builder(
+            R.drawable.ic_cancel_white_48dp,
+            "Dismiss",
+            dismissPendingIntent
+        )
+            .build()
 
 
         // 5. Build and issue the notification.
@@ -282,39 +229,31 @@ public class StandaloneMainActivity extends Activity implements
         // it several seconds later.
 
         // Notification Channel Id is ignored for Android pre O (26).
-        NotificationCompat.Builder notificationCompatBuilder =
-                new NotificationCompat.Builder(
-                        getApplicationContext(), notificationChannelId);
-
-        GlobalNotificationBuilder.setNotificationCompatBuilderInstance(notificationCompatBuilder);
-
-        notificationCompatBuilder
-                // BIG_TEXT_STYLE sets title and content.
-                .setStyle(bigTextStyle)
-                .setContentTitle(bigTextStyleReminderAppData.getContentTitle())
-                .setContentText(bigTextStyleReminderAppData.getContentText())
-                .setSmallIcon(R.drawable.ic_launcher)
-                .setLargeIcon(BitmapFactory.decodeResource(
-                        getResources(),
-                        R.drawable.ic_alarm_white_48dp))
-                .setDefaults(NotificationCompat.DEFAULT_ALL)
-                // Set primary color (important for Wear 2.0 Notifications).
-                .setColor(ContextCompat.getColor(getApplicationContext(), R.color.colorPrimary))
-
-                .setCategory(Notification.CATEGORY_REMINDER)
-
-                // Sets priority for 25 and below. For 26 and above, 'priority' is deprecated for
-                // 'importance' which is set in the NotificationChannel. The integers representing
-                // 'priority' are different from 'importance', so make sure you don't mix them.
-                .setPriority(bigTextStyleReminderAppData.getPriority())
-
-                // Sets lock-screen visibility for 25 and below. For 26 and above, lock screen
-                // visibility is set in the NotificationChannel.
-                .setVisibility(bigTextStyleReminderAppData.getChannelLockscreenVisibility())
-
-                // Adds additional actions specified above.
-                .addAction(snoozeAction)
-                .addAction(dismissAction);
+        val notificationCompatBuilder = NotificationCompat.Builder(
+            applicationContext, notificationChannelId
+        )
+        GlobalNotificationBuilder.notificationCompatBuilderInstance = notificationCompatBuilder
+        notificationCompatBuilder // BIG_TEXT_STYLE sets title and content.
+            .setStyle(bigTextStyle)
+            .setContentTitle(bigTextStyleReminderAppData.contentTitle)
+            .setContentText(bigTextStyleReminderAppData.contentText)
+            .setSmallIcon(R.drawable.ic_launcher)
+            .setLargeIcon(
+                BitmapFactory.decodeResource(
+                    resources,
+                    R.drawable.ic_alarm_white_48dp
+                )
+            )
+            .setDefaults(NotificationCompat.DEFAULT_ALL) // Set primary color (important for Wear 2.0 Notifications).
+            .setColor(ContextCompat.getColor(applicationContext, R.color.colorPrimary))
+            .setCategory(Notification.CATEGORY_REMINDER) // Sets priority for 25 and below. For 26 and above, 'priority' is deprecated for
+            // 'importance' which is set in the NotificationChannel. The integers representing
+            // 'priority' are different from 'importance', so make sure you don't mix them.
+            .setPriority(bigTextStyleReminderAppData.priority) // Sets lock-screen visibility for 25 and below. For 26 and above, lock screen
+            // visibility is set in the NotificationChannel.
+            .setVisibility(bigTextStyleReminderAppData.channelLockscreenVisibility) // Adds additional actions specified above.
+            .addAction(snoozeAction)
+            .addAction(dismissAction)
 
         /* REPLICATE_NOTIFICATION_STYLE_CODE:
          * You can replicate Notification Style functionality on Wear 2.0 (24+) by not setting the
@@ -322,29 +261,20 @@ public class StandaloneMainActivity extends Activity implements
          * still allow the user to open the native Wear app from the Notification itself, so you
          * add an action to launch the app.
          */
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
 
-            // Enables launching app in Wear 2.0 while keeping the old Notification Style behavior.
-            NotificationCompat.Action mainAction = new NotificationCompat.Action.Builder(
-                    R.drawable.ic_launcher,
-                    "Open",
-                    mainPendingIntent)
-                    .build();
-
-            notificationCompatBuilder.addAction(mainAction);
-
-        } else {
-            // Wear 1.+ still functions the same, so we set the main content intent.
-            notificationCompatBuilder.setContentIntent(mainPendingIntent);
-        }
-
-
-        Notification notification = notificationCompatBuilder.build();
-
-        mNotificationManagerCompat.notify(NOTIFICATION_ID, notification);
+        // Enables launching app in Wear 2.0 while keeping the old Notification Style behavior.
+        val mainAction = NotificationCompat.Action.Builder(
+            R.drawable.ic_launcher,
+            "Open",
+            mainPendingIntent
+        )
+            .build()
+        notificationCompatBuilder.addAction(mainAction)
+        val notification = notificationCompatBuilder.build()
+        mNotificationManagerCompat.notify(NOTIFICATION_ID, notification)
 
         // Close app to demonstrate notification in steam.
-        finish();
+        finish()
     }
 
     /*
@@ -367,9 +297,8 @@ public class StandaloneMainActivity extends Activity implements
      * If you wish to replicate the original experience of a bridged notification, please review the
      * generateBigTextStyleNotification() method above to see how.
      */
-    private void generateBigPictureStyleNotification() {
-
-        Log.d(TAG, "generateBigPictureStyleNotification()");
+    private fun generateBigPictureStyleNotification() {
+        Log.d(TAG, "generateBigPictureStyleNotification()")
 
         // Main steps for building a BIG_PICTURE_STYLE notification:
         //      0. Get your data
@@ -380,69 +309,61 @@ public class StandaloneMainActivity extends Activity implements
         //      5. Build and issue the notification
 
         // 0. Get your data (everything unique per Notification).
-        MockDatabase.BigPictureStyleSocialAppData bigPictureStyleSocialAppData =
-                MockDatabase.getBigPictureStyleData();
+        val bigPictureStyleSocialAppData = MockDatabase.getBigPictureStyleData()
 
         // 1. Build the BIG_PICTURE_STYLE.
-        BigPictureStyle bigPictureStyle = new NotificationCompat.BigPictureStyle()
-                // Provides the bitmap for the BigPicture notification.
+        val bigPictureStyle =
+            NotificationCompat.BigPictureStyle() // Provides the bitmap for the BigPicture notification.
                 .bigPicture(
-                        BitmapFactory.decodeResource(
-                                getResources(),
-                                bigPictureStyleSocialAppData.getBigImage()))
-                // Overrides ContentTitle in the big form of the template.
-                .setBigContentTitle(bigPictureStyleSocialAppData.getBigContentTitle())
-                // Summary line after the detail section in the big form of the template.
-                .setSummaryText(bigPictureStyleSocialAppData.getSummaryText());
+                    BitmapFactory.decodeResource(
+                        resources,
+                        bigPictureStyleSocialAppData.bigImage
+                    )
+                ) // Overrides ContentTitle in the big form of the template.
+                .setBigContentTitle(bigPictureStyleSocialAppData.bigContentTitle) // Summary line after the detail section in the big form of the template.
+                .setSummaryText(bigPictureStyleSocialAppData.summaryText)
 
         // 2. Create/Retrieve Notification Channel for O and beyond devices (26+).
-        String notificationChannelId =
-                NotificationUtil.createNotificationChannel(this, bigPictureStyleSocialAppData);
+        val notificationChannelId =
+            NotificationUtil.createNotificationChannel(this, bigPictureStyleSocialAppData)!!
 
         // 3. Set up main Intent for notification.
-        Intent mainIntent = new Intent(this, BigPictureSocialMainActivity.class);
-
-        PendingIntent mainPendingIntent =
-                PendingIntent.getActivity(
-                        this,
-                        0,
-                        mainIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT
-                );
+        val mainIntent = Intent(this, BigPictureSocialMainActivity::class.java)
+        val mainPendingIntent = getActivity(
+            this,
+            0,
+            mainIntent,
+            FLAG_UPDATE_CURRENT
+        )
 
         // 4. Set up a RemoteInput Action, so users can input (keyboard, drawing, voice) directly
         // from the notification without entering the app.
 
         // Create the RemoteInput.
-        String replyLabel = getString(R.string.reply_label);
-        RemoteInput remoteInput =
-                new RemoteInput.Builder(BigPictureSocialIntentService.EXTRA_COMMENT)
-                        .setLabel(replyLabel)
-                        // List of quick response choices for any wearables paired with the phone.
-                        .setChoices(bigPictureStyleSocialAppData.getPossiblePostResponses())
-                        .build();
+        val replyLabel = getString(R.string.reply_label)
+        val remoteInput = RemoteInput.Builder(BigPictureSocialIntentService.EXTRA_COMMENT)
+            .setLabel(replyLabel) // List of quick response choices for any wearables paired with the phone.
+            .setChoices(bigPictureStyleSocialAppData.possiblePostResponses)
+            .build()
 
         // Create PendingIntent for service that handles input.
-        Intent replyIntent = new Intent(this, BigPictureSocialIntentService.class);
-        replyIntent.setAction(BigPictureSocialIntentService.ACTION_COMMENT);
-        PendingIntent replyActionPendingIntent = PendingIntent.getService(this, 0, replyIntent, 0);
+        val replyIntent = Intent(this, BigPictureSocialIntentService::class.java)
+        replyIntent.action = BigPictureSocialIntentService.ACTION_COMMENT
+        val replyActionPendingIntent = getService(this, 0, replyIntent, FLAG_IMMUTABLE)
 
         // Enable action to appear inline on Wear 2.0 (24+). This means it will appear over the
         // lower portion of the Notification for easy action (only possible for one action).
-        final NotificationCompat.Action.WearableExtender inlineActionForWear2 =
-                new NotificationCompat.Action.WearableExtender()
-                        .setHintDisplayActionInline(true)
-                        .setHintLaunchesActivity(false);
-
-        NotificationCompat.Action replyAction =
-                new NotificationCompat.Action.Builder(
-                        R.drawable.ic_reply_white_18dp,
-                        replyLabel,
-                        replyActionPendingIntent)
-                        .addRemoteInput(remoteInput)
-                        // Add WearableExtender to enable inline actions.
-                        .extend(inlineActionForWear2)
-                        .build();
+        val inlineActionForWear2 = NotificationCompat.Action.WearableExtender()
+            .setHintDisplayActionInline(true)
+            .setHintLaunchesActivity(false)
+        val replyAction = NotificationCompat.Action.Builder(
+            R.drawable.ic_reply_white_18dp,
+            replyLabel,
+            replyActionPendingIntent
+        )
+            .addRemoteInput(remoteInput) // Add WearableExtender to enable inline actions.
+            .extend(inlineActionForWear2)
+            .build()
 
         // 5. Build and issue the notification
 
@@ -451,61 +372,54 @@ public class StandaloneMainActivity extends Activity implements
         // we built here for a comment on the post.
 
         // Notification Channel Id is ignored for Android pre O (26).
-        NotificationCompat.Builder notificationCompatBuilder =
-                new NotificationCompat.Builder(
-                        getApplicationContext(), notificationChannelId);
-
-        GlobalNotificationBuilder.setNotificationCompatBuilderInstance(notificationCompatBuilder);
-
-        notificationCompatBuilder
-                // BIG_PICTURE_STYLE sets title and content.
-                .setStyle(bigPictureStyle)
-                .setContentTitle(bigPictureStyleSocialAppData.getContentTitle())
-                .setContentText(bigPictureStyleSocialAppData.getContentText())
-                .setSmallIcon(R.drawable.ic_launcher)
-                .setLargeIcon(BitmapFactory.decodeResource(
-                        getResources(),
-                        R.drawable.ic_person_black_48dp))
-                .setContentIntent(mainPendingIntent)
-                .setDefaults(NotificationCompat.DEFAULT_ALL)
-                // Set primary color (important for Wear 2.0 Notifications).
-                .setColor(ContextCompat.getColor(getApplicationContext(), R.color.colorPrimary))
-
-                .setSubText(Integer.toString(1))
-                .addAction(replyAction)
-                .setCategory(Notification.CATEGORY_SOCIAL)
-
-                // Sets priority for 25 and below. For 26 and above, 'priority' is deprecated for
-                // 'importance' which is set in the NotificationChannel. The integers representing
-                // 'priority' are different from 'importance', so make sure you don't mix them.
-                .setPriority(bigPictureStyleSocialAppData.getPriority())
-
-                // Sets lock-screen visibility for 25 and below. For 26 and above, lock screen
-                // visibility is set in the NotificationChannel.
-                .setVisibility(bigPictureStyleSocialAppData.getChannelLockscreenVisibility())
-                // Notifies system that the main launch intent is an Activity.
-                .extend(new NotificationCompat.WearableExtender()
-                        .setHintContentIntentLaunchesActivity(true));
+        val notificationCompatBuilder = NotificationCompat.Builder(
+            applicationContext, notificationChannelId
+        )
+        GlobalNotificationBuilder.notificationCompatBuilderInstance = notificationCompatBuilder
+        notificationCompatBuilder // BIG_PICTURE_STYLE sets title and content.
+            .setStyle(bigPictureStyle)
+            .setContentTitle(bigPictureStyleSocialAppData.contentTitle)
+            .setContentText(bigPictureStyleSocialAppData.contentText)
+            .setSmallIcon(R.drawable.ic_launcher)
+            .setLargeIcon(
+                BitmapFactory.decodeResource(
+                    resources,
+                    R.drawable.ic_person_black_48dp
+                )
+            )
+            .setContentIntent(mainPendingIntent)
+            .setDefaults(NotificationCompat.DEFAULT_ALL) // Set primary color (important for Wear 2.0 Notifications).
+            .setColor(ContextCompat.getColor(applicationContext, R.color.colorPrimary))
+            .setSubText(1.toString())
+            .addAction(replyAction)
+            .setCategory(Notification.CATEGORY_SOCIAL) // Sets priority for 25 and below. For 26 and above, 'priority' is deprecated for
+            // 'importance' which is set in the NotificationChannel. The integers representing
+            // 'priority' are different from 'importance', so make sure you don't mix them.
+            .setPriority(bigPictureStyleSocialAppData.priority) // Sets lock-screen visibility for 25 and below. For 26 and above, lock screen
+            // visibility is set in the NotificationChannel.
+            .setVisibility(bigPictureStyleSocialAppData.channelLockscreenVisibility) // Notifies system that the main launch intent is an Activity.
+            .extend(
+                NotificationCompat.WearableExtender()
+                    .setHintContentIntentLaunchesActivity(true)
+            )
 
         // If the phone is in "Do not disturb mode, the user will still be notified if
         // the sender(s) is starred as a favorite.
-        for (String name : bigPictureStyleSocialAppData.getParticipants()) {
-            notificationCompatBuilder.addPerson(name);
+        for (name in bigPictureStyleSocialAppData.participants) {
+            notificationCompatBuilder.addPerson(name)
         }
-
-        Notification notification = notificationCompatBuilder.build();
-        mNotificationManagerCompat.notify(NOTIFICATION_ID, notification);
+        val notification = notificationCompatBuilder.build()
+        mNotificationManagerCompat.notify(NOTIFICATION_ID, notification)
 
         // Close app to demonstrate notification in steam.
-        finish();
+        finish()
     }
 
     /*
      * Generates a INBOX_STYLE Notification that supports both Wear 1.+ and Wear 2.0.
      */
-    private void generateInboxStyleNotification() {
-
-        Log.d(TAG, "generateInboxStyleNotification()");
+    private fun generateInboxStyleNotification() {
+        Log.d(TAG, "generateInboxStyleNotification()")
 
 
         // Main steps for building a INBOX_STYLE notification:
@@ -516,35 +430,32 @@ public class StandaloneMainActivity extends Activity implements
         //      4. Build and issue the notification
 
         // 0. Get your data (everything unique per Notification).
-        MockDatabase.InboxStyleEmailAppData inboxStyleEmailAppData =
-                MockDatabase.getInboxStyleData();
+        val inboxStyleEmailAppData = MockDatabase.getInboxStyleData()
 
         // 1. Create/Retrieve Notification Channel for O and beyond devices (26+).
-        String notificationChannelId =
-                NotificationUtil.createNotificationChannel(this, inboxStyleEmailAppData);
+        val notificationChannelId =
+            NotificationUtil.createNotificationChannel(this, inboxStyleEmailAppData)!!
 
         // 2. Build the INBOX_STYLE
-        InboxStyle inboxStyle = new NotificationCompat.InboxStyle()
-                // This title is slightly different than regular title, since I know INBOX_STYLE is
+        val inboxStyle =
+            NotificationCompat.InboxStyle() // This title is slightly different than regular title, since I know INBOX_STYLE is
                 // available.
-                .setBigContentTitle(inboxStyleEmailAppData.getBigContentTitle())
-                .setSummaryText(inboxStyleEmailAppData.getSummaryText());
+                .setBigContentTitle(inboxStyleEmailAppData.bigContentTitle)
+                .setSummaryText(inboxStyleEmailAppData.summaryText)
 
         // Add each summary line of the new emails, you can add up to 5.
-        for (String summary : inboxStyleEmailAppData.getIndividualEmailSummary()) {
-            inboxStyle.addLine(summary);
+        for (summary in inboxStyleEmailAppData.individualEmailSummary) {
+            inboxStyle.addLine(summary)
         }
 
         // 3. Set up main Intent for notification.
-        Intent mainIntent = new Intent(this, InboxMainActivity.class);
-
-        PendingIntent mainPendingIntent =
-                PendingIntent.getActivity(
-                        this,
-                        0,
-                        mainIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT
-                );
+        val mainIntent = Intent(this, InboxMainActivity::class.java)
+        val mainPendingIntent = getActivity(
+            this,
+            0,
+            mainIntent,
+            FLAG_UPDATE_CURRENT
+        )
 
         // 4. Build and issue the notification.
 
@@ -553,54 +464,51 @@ public class StandaloneMainActivity extends Activity implements
         // will not need to set a global builder for access to the notification later.
 
         // Notification Channel Id is ignored for Android pre O (26).
-        NotificationCompat.Builder notificationCompatBuilder =
-                new NotificationCompat.Builder(
-                        getApplicationContext(), notificationChannelId);
-
-        GlobalNotificationBuilder.setNotificationCompatBuilderInstance(notificationCompatBuilder);
-
-        notificationCompatBuilder
-                // INBOX_STYLE sets title and content.
-                .setStyle(inboxStyle)
-                .setContentTitle(inboxStyleEmailAppData.getContentTitle())
-                .setContentText(inboxStyleEmailAppData.getContentText())
-                .setSmallIcon(R.drawable.ic_launcher)
-                .setLargeIcon(BitmapFactory.decodeResource(
-                        getResources(),
-                        R.drawable.ic_person_black_48dp))
-                .setContentIntent(mainPendingIntent)
-                .setDefaults(NotificationCompat.DEFAULT_ALL)
-                // Set primary color (important for Wear 2.0 Notifications).
-                .setColor(ContextCompat.getColor(getApplicationContext(), R.color.colorPrimary))
-
-                // Sets large number at the right-hand side of the notification for Wear 1.+.
-                .setSubText(Integer.toString(inboxStyleEmailAppData.getNumberOfNewEmails()))
-
-                .setCategory(Notification.CATEGORY_EMAIL)
-
-                // Sets priority for 25 and below. For 26 and above, 'priority' is deprecated for
-                // 'importance' which is set in the NotificationChannel. The integers representing
-                // 'priority' are different from 'importance', so make sure you don't mix them.
-                .setPriority(inboxStyleEmailAppData.getPriority())
-
-                // Sets lock-screen visibility for 25 and below. For 26 and above, lock screen
-                // visibility is set in the NotificationChannel.
-                .setVisibility(inboxStyleEmailAppData.getChannelLockscreenVisibility())
-                // Notifies system that the main launch intent is an Activity.
-                .extend(new NotificationCompat.WearableExtender()
-                        .setHintContentIntentLaunchesActivity(true));
+        val notificationCompatBuilder = NotificationCompat.Builder(
+            applicationContext, notificationChannelId
+        )
+        GlobalNotificationBuilder.notificationCompatBuilderInstance = notificationCompatBuilder
+        notificationCompatBuilder // INBOX_STYLE sets title and content.
+            .setStyle(inboxStyle)
+            .setContentTitle(inboxStyleEmailAppData.contentTitle)
+            .setContentText(inboxStyleEmailAppData.contentText)
+            .setSmallIcon(R.drawable.ic_launcher)
+            .setLargeIcon(
+                BitmapFactory.decodeResource(
+                    resources,
+                    R.drawable.ic_person_black_48dp
+                )
+            )
+            .setContentIntent(mainPendingIntent)
+            .setDefaults(NotificationCompat.DEFAULT_ALL) // Set primary color (important for Wear 2.0 Notifications).
+            .setColor(
+                ContextCompat.getColor(
+                    applicationContext,
+                    R.color.colorPrimary
+                )
+            ) // Sets large number at the right-hand side of the notification for Wear 1.+.
+            .setSubText(inboxStyleEmailAppData.numberOfNewEmails.toString())
+            .setCategory(Notification.CATEGORY_EMAIL) // Sets priority for 25 and below. For 26 and above, 'priority' is deprecated for
+            // 'importance' which is set in the NotificationChannel. The integers representing
+            // 'priority' are different from 'importance', so make sure you don't mix them.
+            .setPriority(inboxStyleEmailAppData.priority) // Sets lock-screen visibility for 25 and below. For 26 and above, lock screen
+            // visibility is set in the NotificationChannel.
+            .setVisibility(inboxStyleEmailAppData.channelLockscreenVisibility) // Notifies system that the main launch intent is an Activity.
+            .extend(
+                NotificationCompat.WearableExtender()
+                    .setHintContentIntentLaunchesActivity(true)
+            )
 
         // If the phone is in "Do not disturb mode, the user will still be notified if
         // the sender(s) is starred as a favorite.
-        for (String name : inboxStyleEmailAppData.getParticipants()) {
-            notificationCompatBuilder.addPerson(name);
+        for (name in inboxStyleEmailAppData.participants) {
+            notificationCompatBuilder.addPerson(name)
         }
-
-        Notification notification = notificationCompatBuilder.build();
-        mNotificationManagerCompat.notify(NOTIFICATION_ID, notification);
+        val notification = notificationCompatBuilder.build()
+        mNotificationManagerCompat.notify(NOTIFICATION_ID, notification)
 
         // Close app to demonstrate notification in steam.
-        finish();
+        finish()
     }
 
     /*
@@ -621,9 +529,8 @@ public class StandaloneMainActivity extends Activity implements
      * If you wish to replicate the original experience of a bridged notification, please review the
      * generateBigTextStyleNotification() method above to see how.
      */
-    private void generateMessagingStyleNotification() {
-
-        Log.d(TAG, "generateMessagingStyleNotification()");
+    private fun generateMessagingStyleNotification() {
+        Log.d(TAG, "generateMessagingStyleNotification()")
 
         // Main steps for building a MESSAGING_STYLE notification:
         //      0. Get your data
@@ -634,19 +541,15 @@ public class StandaloneMainActivity extends Activity implements
         //      5. Build and issue the notification
 
         // 0. Get your data (everything unique per Notification).
-        MockDatabase.MessagingStyleCommsAppData messagingStyleCommsAppData =
-                MockDatabase.getMessagingStyleData(getApplicationContext());
+        val messagingStyleCommsAppData = MockDatabase.getMessagingStyleData(applicationContext)
 
         // 1. Create/Retrieve Notification Channel for O and beyond devices (26+).
-        String notificationChannelId =
-                NotificationUtil.createNotificationChannel(this, messagingStyleCommsAppData);
+        val notificationChannelId =
+            NotificationUtil.createNotificationChannel(this, messagingStyleCommsAppData)!!
 
         // 2. Build the Notification.Style (MESSAGING_STYLE).
-        String contentTitle = messagingStyleCommsAppData.getContentTitle();
-
-        MessagingStyle messagingStyle =
-                new NotificationCompat.MessagingStyle(messagingStyleCommsAppData.getMe())
-                        /*
+        val contentTitle = messagingStyleCommsAppData.contentTitle
+        val messagingStyle = NotificationCompat.MessagingStyle(messagingStyleCommsAppData.me) /*
                          * <p>This API's behavior was changed in SDK version
                          * {@link Build.VERSION_CODES#P}. If your application's target version is
                          * less than {@link Build.VERSION_CODES#P}, setting a conversation title to
@@ -659,66 +562,57 @@ public class StandaloneMainActivity extends Activity implements
                          *
                          * In our case, we use the same title.
                          */
-                        .setConversationTitle(contentTitle);
+            .setConversationTitle(contentTitle)
 
         // Adds all Messages.
         // Note: Messages include the text, timestamp, and sender.
-        for (MessagingStyle.Message message : messagingStyleCommsAppData.getMessages()) {
-            messagingStyle.addMessage(message);
+        for (message in messagingStyleCommsAppData.messages) {
+            messagingStyle.addMessage(message)
         }
-
-        messagingStyle.setGroupConversation(messagingStyleCommsAppData.isGroupConversation());
+        messagingStyle.isGroupConversation = messagingStyleCommsAppData.isGroupConversation
 
         // 3. Set up main Intent for notification.
-        Intent notifyIntent = new Intent(this, MessagingMainActivity.class);
-
-        PendingIntent mainPendingIntent =
-                PendingIntent.getActivity(
-                        this,
-                        0,
-                        notifyIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT
-                );
+        val notifyIntent = Intent(this, MessagingMainActivity::class.java)
+        val mainPendingIntent = getActivity(
+            this,
+            0,
+            notifyIntent,
+            FLAG_UPDATE_CURRENT
+        )
 
 
         // 4. Set up a RemoteInput Action, so users can input (keyboard, drawing, voice) directly
         // from the notification without entering the app.
 
         // Create the RemoteInput specifying this key.
-        String replyLabel = getString(R.string.reply_label);
-        RemoteInput remoteInput = new RemoteInput.Builder(MessagingIntentService.EXTRA_REPLY)
-                .setLabel(replyLabel)
-                // Use machine learning to create responses based on previous messages.
-                .setChoices(messagingStyleCommsAppData.getReplyChoicesBasedOnLastMessage())
-                .build();
+        val replyLabel = getString(R.string.reply_label)
+        val remoteInput = RemoteInput.Builder(MessagingIntentService.EXTRA_REPLY)
+            .setLabel(replyLabel) // Use machine learning to create responses based on previous messages.
+            .setChoices(messagingStyleCommsAppData.replyChoicesBasedOnLastMessage)
+            .build()
 
         // Create PendingIntent for service that handles input.
-        Intent replyIntent = new Intent(this, MessagingIntentService.class);
-        replyIntent.setAction(MessagingIntentService.ACTION_REPLY);
-        PendingIntent replyActionPendingIntent = PendingIntent.getService(this, 0, replyIntent, 0);
+        val replyIntent = Intent(this, MessagingIntentService::class.java)
+        replyIntent.action = MessagingIntentService.ACTION_REPLY
+        val replyActionPendingIntent = getService(this, 0, replyIntent, FLAG_IMMUTABLE)
 
         // Enable action to appear inline on Wear 2.0 (24+). This means it will appear over the
         // lower portion of the Notification for easy action (only possible for one action).
-        final NotificationCompat.Action.WearableExtender inlineActionForWear2 =
-                new NotificationCompat.Action.WearableExtender()
-                        .setHintDisplayActionInline(true)
-                        .setHintLaunchesActivity(false);
-
-        NotificationCompat.Action replyAction =
-                new NotificationCompat.Action.Builder(
-                        R.drawable.ic_reply_white_18dp,
-                        replyLabel,
-                        replyActionPendingIntent)
-                        .addRemoteInput(remoteInput)
-                        // Informs system we aren't bringing up our own custom UI for a reply
-                        // action.
-                        .setShowsUserInterface(false)
-                        // Allows system to generate replies by context of conversation.
-                        .setAllowGeneratedReplies(true)
-                        // Add WearableExtender to enable inline actions.
-                        .setSemanticAction(Action.SEMANTIC_ACTION_REPLY)
-                        .extend(inlineActionForWear2)
-                        .build();
+        val inlineActionForWear2 = NotificationCompat.Action.WearableExtender()
+            .setHintDisplayActionInline(true)
+            .setHintLaunchesActivity(false)
+        val replyAction = NotificationCompat.Action.Builder(
+            R.drawable.ic_reply_white_18dp,
+            replyLabel,
+            replyActionPendingIntent
+        )
+            .addRemoteInput(remoteInput) // Informs system we aren't bringing up our own custom UI for a reply
+            // action.
+            .setShowsUserInterface(false) // Allows system to generate replies by context of conversation.
+            .setAllowGeneratedReplies(true) // Add WearableExtender to enable inline actions.
+            .setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_REPLY)
+            .extend(inlineActionForWear2)
+            .build()
 
 
         // 5. Build and issue the notification.
@@ -728,52 +622,48 @@ public class StandaloneMainActivity extends Activity implements
         // Builder globally (as outlined earlier).
 
         // Notification Channel Id is ignored for Android pre O (26).
-        NotificationCompat.Builder notificationCompatBuilder =
-                new NotificationCompat.Builder(
-                        getApplicationContext(), notificationChannelId);
-
-        GlobalNotificationBuilder.setNotificationCompatBuilderInstance(notificationCompatBuilder);
-
-        notificationCompatBuilder
-                // MESSAGING_STYLE sets title and content for Wear 1.+ and Wear 2.0 devices.
-                .setStyle(messagingStyle)
-                .setContentTitle(contentTitle)
-                .setContentText(messagingStyleCommsAppData.getContentText())
-                .setSmallIcon(R.drawable.ic_launcher)
-                .setLargeIcon(BitmapFactory.decodeResource(
-                        getResources(),
-                        R.drawable.ic_person_black_48dp))
-                .setContentIntent(mainPendingIntent)
-                .setDefaults(NotificationCompat.DEFAULT_ALL)
-                // Set primary color (important for Wear 2.0 Notifications).
-                .setColor(ContextCompat.getColor(getApplicationContext(), R.color.colorPrimary))
-
-                // Number of new notifications for API <24 (Wear 1.+) devices.
-                .setSubText(Integer.toString(messagingStyleCommsAppData.getNumberOfNewMessages()))
-
-                .addAction(replyAction)
-                .setCategory(Notification.CATEGORY_MESSAGE)
-
-                // Sets priority for 25 and below. For 26 and above, 'priority' is deprecated for
-                // 'importance' which is set in the NotificationChannel. The integers representing
-                // 'priority' are different from 'importance', so make sure you don't mix them.
-                .setPriority(messagingStyleCommsAppData.getPriority())
-
-                // Sets lock-screen visibility for 25 and below. For 26 and above, lock screen
-                // visibility is set in the NotificationChannel.
-                .setVisibility(messagingStyleCommsAppData.getChannelLockscreenVisibility());
+        val notificationCompatBuilder = NotificationCompat.Builder(
+            applicationContext, notificationChannelId
+        )
+        GlobalNotificationBuilder.notificationCompatBuilderInstance = notificationCompatBuilder
+        notificationCompatBuilder // MESSAGING_STYLE sets title and content for Wear 1.+ and Wear 2.0 devices.
+            .setStyle(messagingStyle)
+            .setContentTitle(contentTitle)
+            .setContentText(messagingStyleCommsAppData.contentText)
+            .setSmallIcon(R.drawable.ic_launcher)
+            .setLargeIcon(
+                BitmapFactory.decodeResource(
+                    resources,
+                    R.drawable.ic_person_black_48dp
+                )
+            )
+            .setContentIntent(mainPendingIntent)
+            .setDefaults(NotificationCompat.DEFAULT_ALL) // Set primary color (important for Wear 2.0 Notifications).
+            .setColor(
+                ContextCompat.getColor(
+                    applicationContext,
+                    R.color.colorPrimary
+                )
+            ) // Number of new notifications for API <24 (Wear 1.+) devices.
+            .setSubText(messagingStyleCommsAppData.numberOfNewMessages.toString())
+            .addAction(replyAction)
+            .setCategory(Notification.CATEGORY_MESSAGE) // Sets priority for 25 and below. For 26 and above, 'priority' is deprecated for
+            // 'importance' which is set in the NotificationChannel. The integers representing
+            // 'priority' are different from 'importance', so make sure you don't mix them.
+            .setPriority(messagingStyleCommsAppData.priority) // Sets lock-screen visibility for 25 and below. For 26 and above, lock screen
+            // visibility is set in the NotificationChannel.
+            .setVisibility(messagingStyleCommsAppData.channelLockscreenVisibility)
 
         // If the phone is in "Do not disturb" mode, the user may still be notified if the
         // sender(s) are in a group allowed through "Do not disturb" by the user.
-        for (Person person : messagingStyleCommsAppData.getParticipants()) {
-            notificationCompatBuilder.addPerson(person.getUri());
+        for (person in messagingStyleCommsAppData.participants) {
+            notificationCompatBuilder.addPerson(person.uri)
         }
-
-        Notification notification = notificationCompatBuilder.build();
-        mNotificationManagerCompat.notify(NOTIFICATION_ID, notification);
+        val notification = notificationCompatBuilder.build()
+        mNotificationManagerCompat.notify(NOTIFICATION_ID, notification)
 
         // Close app to demonstrate notification in steam.
-        finish();
+        finish()
     }
 
     /**
@@ -785,38 +675,54 @@ public class StandaloneMainActivity extends Activity implements
      * Notifications like this sample demonstrates. Spamming users to re-enable your notifications
      * is a bad idea.
      */
-    private void openNotificationSettingsForApp() {
+    private fun openNotificationSettingsForApp() {
         // Links to this app's notification settings
-        Intent intent = new Intent();
-        intent.setAction("android.settings.APP_NOTIFICATION_SETTINGS");
-        intent.putExtra("app_package", getPackageName());
-        intent.putExtra("app_uid", getApplicationInfo().uid);
-        startActivity(intent);
+        val intent = Intent()
+        intent.action = "android.settings.APP_NOTIFICATION_SETTINGS"
+        intent.putExtra("app_package", packageName)
+        intent.putExtra("app_uid", applicationInfo.uid)
+        startActivity(intent)
     }
 
-    @Override
-    public AmbientMode.AmbientCallback getAmbientCallback() {
-        return new MyAmbientCallback();
+    override fun getAmbientCallback(): AmbientMode.AmbientCallback {
+        return MyAmbientCallback()
     }
 
-    private class MyAmbientCallback extends AmbientMode.AmbientCallback {
-        /** Prepares the UI for ambient mode. */
-        @Override
-        public void onEnterAmbient(Bundle ambientDetails) {
-            super.onEnterAmbient(ambientDetails);
-
-            Log.d(TAG, "onEnterAmbient() " + ambientDetails);
+    private inner class MyAmbientCallback : AmbientMode.AmbientCallback() {
+        /** Prepares the UI for ambient mode.  */
+        override fun onEnterAmbient(ambientDetails: Bundle) {
+            super.onEnterAmbient(ambientDetails)
+            Log.d(TAG, "onEnterAmbient() $ambientDetails")
             // In our case, the assets are already in black and white, so we don't update UI.
         }
 
-        /** Restores the UI to active (non-ambient) mode. */
-        @Override
-        public void onExitAmbient() {
-            super.onExitAmbient();
-
-            Log.d(TAG, "onExitAmbient()");
+        /** Restores the UI to active (non-ambient) mode.  */
+        override fun onExitAmbient() {
+            super.onExitAmbient()
+            Log.d(TAG, "onExitAmbient()")
             // In our case, the assets are already in black and white, so we don't update UI.
         }
     }
 
+    companion object {
+        private const val TAG = "StandaloneMainActivity"
+        const val NOTIFICATION_ID = 888
+
+        /*
+     * Used to represent each major {@link NotificationCompat.Style} in the
+     * {@link WearableRecyclerView}. These constants are also used in a switch statement when one
+     * of the items is selected to create the appropriate {@link Notification}.
+     */
+        private const val BIG_TEXT_STYLE = "BIG_TEXT_STYLE"
+        private const val BIG_PICTURE_STYLE = "BIG_PICTURE_STYLE"
+        private const val INBOX_STYLE = "INBOX_STYLE"
+        private const val MESSAGING_STYLE = "MESSAGING_STYLE"
+
+        /*
+    Collection of major {@link NotificationCompat.Style} to create {@link CustomRecyclerAdapter}
+    for {@link WearableRecyclerView}.
+    */
+        private val NOTIFICATION_STYLES =
+            arrayOf(BIG_TEXT_STYLE, BIG_PICTURE_STYLE, INBOX_STYLE, MESSAGING_STYLE)
+    }
 }

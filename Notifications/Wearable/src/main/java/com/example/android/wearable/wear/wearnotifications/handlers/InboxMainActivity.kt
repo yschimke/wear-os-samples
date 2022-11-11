@@ -13,32 +13,26 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
  */
-package com.example.android.wearable.wear.wearnotifications.handlers;
+package com.example.android.wearable.wear.wearnotifications.handlers
 
-import android.app.Activity;
-import android.app.NotificationManager;
-import android.content.Context;
-import android.os.Bundle;
-
-import com.example.android.wearable.wear.wearnotifications.R;
-import com.example.android.wearable.wear.wearnotifications.StandaloneMainActivity;
+import android.app.Activity
+import android.app.NotificationManager
+import android.os.Bundle
+import com.example.android.wearable.wear.wearnotifications.R
+import com.example.android.wearable.wear.wearnotifications.StandaloneMainActivity
 
 /**
  * Template class meant to include functionality for your email app. (This project's main focus
  * is on Notification Styles.)
  */
-public class InboxMainActivity extends Activity {
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_inbox_main);
+class InboxMainActivity : Activity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_inbox_main)
 
         // Cancel Notification
-        NotificationManager notificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-        notificationManager.cancel(StandaloneMainActivity.NOTIFICATION_ID);
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(StandaloneMainActivity.Companion.NOTIFICATION_ID)
 
         // TODO: Handle and display email from your database
     }

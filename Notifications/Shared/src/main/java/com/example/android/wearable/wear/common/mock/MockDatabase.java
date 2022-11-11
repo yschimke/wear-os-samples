@@ -495,7 +495,7 @@ public final class MockDatabase {
             return mChannelEnableVibrate;
         }
 
-        public int getChannelLockscreenVisibility() {
+        public @NotificationCompat.NotificationVisibility int getChannelLockscreenVisibility() {
             return mChannelLockscreenVisibility;
         }
     }

@@ -13,58 +13,53 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.android.wearable.wear.common.util;
+package com.example.android.wearable.wear.common.util
 
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.content.Context;
-import android.os.Build;
-
-import com.example.android.wearable.wear.common.mock.MockDatabase;
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.os.Build
+import com.example.android.wearable.wear.common.mock.MockDatabase.MockNotificationData
 
 /**
- * Simplifies common {@link Notification} tasks.
+ * Simplifies common [Notification] tasks.
  */
-public class NotificationUtil {
-
-    public static String createNotificationChannel(
-            Context context,
-            MockDatabase.MockNotificationData mockNotificationData) {
+object NotificationUtil {
+    fun createNotificationChannel(
+        context: Context,
+        mockNotificationData: MockNotificationData
+    ): String? {
 
         // NotificationChannels are required for Notifications on O (API 26) and above.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 
             // The id of the channel.
-            String channelId = mockNotificationData.getChannelId();
+            val channelId = mockNotificationData.channelId
 
             // The user-visible name of the channel.
-            CharSequence channelName = mockNotificationData.getChannelName();
+            val channelName = mockNotificationData.channelName
             // The user-visible description of the channel.
-            String channelDescription = mockNotificationData.getChannelDescription();
-            int channelImportance = mockNotificationData.getChannelImportance();
-            boolean channelEnableVibrate = mockNotificationData.isChannelEnableVibrate();
-            int channelLockscreenVisibility =
-                    mockNotificationData.getChannelLockscreenVisibility();
+            val channelDescription = mockNotificationData.channelDescription
+            val channelImportance = mockNotificationData.channelImportance
+            val channelEnableVibrate = mockNotificationData.isChannelEnableVibrate
+            val channelLockscreenVisibility = mockNotificationData.channelLockscreenVisibility
 
             // Initializes NotificationChannel.
-            NotificationChannel notificationChannel =
-                    new NotificationChannel(channelId, channelName, channelImportance);
-            notificationChannel.setDescription(channelDescription);
-            notificationChannel.enableVibration(channelEnableVibrate);
-            notificationChannel.setLockscreenVisibility(channelLockscreenVisibility);
+            val notificationChannel = NotificationChannel(channelId, channelName, channelImportance)
+            notificationChannel.description = channelDescription
+            notificationChannel.enableVibration(channelEnableVibrate)
+            notificationChannel.lockscreenVisibility = channelLockscreenVisibility
 
             // Adds NotificationChannel to system. Attempting to create an existing notification
             // channel with its original values performs no operation, so it's safe to perform the
             // below sequence.
-            NotificationManager notificationManager =
-                    (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-            notificationManager.createNotificationChannel(notificationChannel);
-
-            return channelId;
+            val notificationManager =
+                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(notificationChannel)
+            channelId
         } else {
             // Returns null for pre-O (26) devices.
-            return null;
+            null
         }
     }
 }
