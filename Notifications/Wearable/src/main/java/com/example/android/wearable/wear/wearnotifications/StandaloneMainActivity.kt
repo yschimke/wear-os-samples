@@ -15,7 +15,6 @@
  */
 package com.example.android.wearable.wear.wearnotifications
 
-import android.app.Activity
 import android.app.Notification
 import android.app.PendingIntent.FLAG_IMMUTABLE
 import android.app.PendingIntent.FLAG_UPDATE_CURRENT
@@ -30,7 +29,9 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.RemoteInput
 import androidx.core.content.ContextCompat
-import androidx.wear.ambient.AmbientMode
+import androidx.fragment.app.FragmentActivity
+import androidx.wear.ambient.AmbientModeSupport
+import androidx.wear.ambient.AmbientModeSupport.AmbientCallback
 import androidx.wear.widget.WearableLinearLayoutManager
 import androidx.wear.widget.WearableRecyclerView
 import com.example.android.wearable.wear.common.mock.MockDatabase
@@ -49,7 +50,7 @@ import com.google.android.material.snackbar.Snackbar
  * standalone Wear apps. All [NotificationCompat] examples use
  * [NotificationCompat.Style].
  */
-class StandaloneMainActivity : Activity(), AmbientMode.AmbientCallbackProvider {
+class StandaloneMainActivity : FragmentActivity(), AmbientModeSupport.AmbientCallbackProvider {
     private lateinit var mNotificationManagerCompat: NotificationManagerCompat
 
     // Needed for {@link SnackBar} to alert users when {@link Notification} are disabled for app.
@@ -57,18 +58,14 @@ class StandaloneMainActivity : Activity(), AmbientMode.AmbientCallbackProvider {
     private lateinit var mWearableRecyclerView: WearableRecyclerView
     private lateinit var mCustomRecyclerAdapter: CustomRecyclerAdapter
 
-    /**
-     * Ambient mode controller attached to this display. Used by Activity to see if it is in
-     * ambient mode.
-     */
-    private var mAmbientController: AmbientMode.AmbientController? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d(TAG, "onCreate()")
         setContentView(R.layout.activity_main)
 
         // Enables Ambient mode.
-        mAmbientController = AmbientMode.attachAmbientSupport(this)
+        AmbientModeSupport.attach(this)
+
         mNotificationManagerCompat = NotificationManagerCompat.from(
             applicationContext
         )
@@ -95,6 +92,8 @@ class StandaloneMainActivity : Activity(), AmbientMode.AmbientCallbackProvider {
         )
         mWearableRecyclerView.adapter = mCustomRecyclerAdapter
     }
+
+
 
     // Called by WearableRecyclerView when an item is selected (check onCreate() for
     // initialization).
@@ -684,11 +683,11 @@ class StandaloneMainActivity : Activity(), AmbientMode.AmbientCallbackProvider {
         startActivity(intent)
     }
 
-    override fun getAmbientCallback(): AmbientMode.AmbientCallback {
+    override fun getAmbientCallback(): AmbientCallback {
         return MyAmbientCallback()
     }
 
-    private inner class MyAmbientCallback : AmbientMode.AmbientCallback() {
+    private inner class MyAmbientCallback : AmbientCallback() {
         /** Prepares the UI for ambient mode.  */
         override fun onEnterAmbient(ambientDetails: Bundle) {
             super.onEnterAmbient(ambientDetails)
