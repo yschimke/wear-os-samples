@@ -25,7 +25,7 @@ import android.app.Notification;
 
 public class Controller {
 
-    private StandaloneMainActivity mView;
+    private final StandaloneMainActivity mView;
 
     Controller(StandaloneMainActivity standaloneMainActivity) {
         mView = standaloneMainActivity;

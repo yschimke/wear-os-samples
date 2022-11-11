@@ -35,11 +35,11 @@ public class CustomRecyclerAdapter extends
 
     private static final String TAG = "CustomRecyclerAdapter";
 
-    private String[] mDataSet;
+    private final String[] mDataSet;
 
     // Custom Controller used to instruct main activity to update {@link Notification} and/or
     // UI for item selected.
-    private Controller mController;
+    private final Controller mController;
 
     /**
      * Provides reference to the views for each data item. We don't maintain a reference to the
@@ -52,7 +52,7 @@ public class CustomRecyclerAdapter extends
 
         public ViewHolder(View view) {
             super(view);
-            mTextView = (TextView) view.findViewById(R.id.textView);
+            mTextView = view.findViewById(R.id.textView);
         }
 
         @Override

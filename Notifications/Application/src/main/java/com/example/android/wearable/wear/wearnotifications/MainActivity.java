@@ -97,9 +97,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mMainRelativeLayout = (RelativeLayout) findViewById(R.id.mainRelativeLayout);
-        mNotificationDetailsTextView = (TextView) findViewById(R.id.notificationDetails);
-        mSpinner = (Spinner) findViewById(R.id.spinner);
+        mMainRelativeLayout = findViewById(R.id.mainRelativeLayout);
+        mNotificationDetailsTextView = findViewById(R.id.notificationDetails);
+        mSpinner = findViewById(R.id.spinner);
 
         mNotificationManagerCompat = NotificationManagerCompat.from(getApplicationContext());
 

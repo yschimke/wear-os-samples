@@ -55,9 +55,9 @@ public final class MockDatabase {
         private static BigTextStyleReminderAppData sInstance = null;
 
         // Unique data for this Notification.Style:
-        private String mBigContentTitle;
-        private String mBigText;
-        private String mSummaryText;
+        private final String mBigContentTitle;
+        private final String mBigText;
+        private final String mSummaryText;
 
         public static BigTextStyleReminderAppData getInstance() {
             if (sInstance == null) {
@@ -126,13 +126,13 @@ public final class MockDatabase {
         private static BigPictureStyleSocialAppData sInstance = null;
 
         // Unique data for this Notification.Style:
-        private int mBigImage;
-        private String mBigContentTitle;
-        private String mSummaryText;
+        private final int mBigImage;
+        private final String mBigContentTitle;
+        private final String mSummaryText;
 
-        private CharSequence[] mPossiblePostResponses;
+        private final CharSequence[] mPossiblePostResponses;
 
-        private ArrayList<String> mParticipants;
+        private final ArrayList<String> mParticipants;
 
         public static BigPictureStyleSocialAppData getInstance() {
             if (sInstance == null) {
@@ -210,12 +210,12 @@ public final class MockDatabase {
         private static InboxStyleEmailAppData sInstance = null;
 
         // Unique data for this Notification.Style:
-        private int mNumberOfNewEmails;
-        private String mBigContentTitle;
-        private String mSummaryText;
-        private ArrayList<String> mIndividualEmailSummary;
+        private final int mNumberOfNewEmails;
+        private final String mBigContentTitle;
+        private final String mSummaryText;
+        private final ArrayList<String> mIndividualEmailSummary;
 
-        private ArrayList<String> mParticipants;
+        private final ArrayList<String> mParticipants;
 
         public static InboxStyleEmailAppData getInstance() {
             if (sInstance == null) {
@@ -304,14 +304,14 @@ public final class MockDatabase {
         private static MessagingStyleCommsAppData sInstance = null;
 
         // Unique data for this Notification.Style:
-        private ArrayList<MessagingStyle.Message> mMessages;
+        private final ArrayList<MessagingStyle.Message> mMessages;
         // String of all mMessages.
-        private String mFullConversation;
+        private final String mFullConversation;
         // Name preferred when replying to chat.
-        private Person mMe;
-        private ArrayList<Person> mParticipants;
+        private final Person mMe;
+        private final ArrayList<Person> mParticipants;
 
-        private CharSequence[] mReplyChoicesBasedOnLastMessages;
+        private final CharSequence[] mReplyChoicesBasedOnLastMessages;
 
         public static MessagingStyleCommsAppData getInstance(Context context) {
             if (sInstance == null) {
@@ -379,15 +379,15 @@ public final class MockDatabase {
             // representing time in milliseconds.
             mMessages.add(
                     // When you are setting an image for a message, text does not display.
-                    new MessagingStyle.Message("", 1528490641998l, participant1)
+                    new MessagingStyle.Message("", 1528490641998L, participant1)
                             .setData("image/png", resourceToUri(context, R.drawable.earth)));
 
             mMessages.add(
                     new MessagingStyle.Message(
-                            "Visiting the moon again? :P", 1528490643998l, mMe));
+                            "Visiting the moon again? :P", 1528490643998L, mMe));
 
             mMessages.add(
-                    new MessagingStyle.Message("HEY, I see my house!", 1528490645998l, participant2));
+                    new MessagingStyle.Message("HEY, I see my house!", 1528490645998L, participant2));
 
             // String version of the mMessages above.
             mFullConversation =
