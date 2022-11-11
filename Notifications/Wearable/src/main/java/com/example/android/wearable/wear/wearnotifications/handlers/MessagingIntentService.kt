@@ -105,7 +105,7 @@ class MessagingIntentService : IntentService("MessagingIntentService") {
                 applicationContext
             )
             notificationManagerCompat.notify(
-                StandaloneMainActivity.Companion.NOTIFICATION_ID,
+                StandaloneMainActivity.NOTIFICATION_ID,
                 notification
             )
         }

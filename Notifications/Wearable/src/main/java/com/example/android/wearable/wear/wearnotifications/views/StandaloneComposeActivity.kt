@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.android.wearable.wear.wearnotifications
+package com.example.android.wearable.wear.wearnotifications.views
 
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.core.app.NotificationCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.wear.ambient.AmbientModeSupport
+import com.example.android.wearable.wear.wearnotifications.WearNotificationApp
 
 /**
  * Demonstrates best practice for [NotificationCompat] Notifications created by local

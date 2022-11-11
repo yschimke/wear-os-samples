@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.android.wearable.wear.wearnotifications
+package com.example.android.wearable.wear.wearnotifications.views
 
 import androidx.wear.widget.WearableRecyclerView
+import com.example.android.wearable.wear.wearnotifications.StandaloneMainActivity
 
 /**
  * Controller used to instruct main activity to update [Notification] based on changes in

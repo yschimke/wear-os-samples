@@ -76,23 +76,20 @@ class BigTextIntentService : IntentService("BigTextIntentService") {
             // Note: New builder set globally in the method
             notificationCompatBuilder = recreateBuilderWithBigTextStyle()
         }
-        val notification: Notification
-        notification = notificationCompatBuilder.build()
-        if (notification != null) {
-            val notificationManagerCompat = NotificationManagerCompat.from(
-                applicationContext
-            )
-            notificationManagerCompat.cancel(StandaloneMainActivity.Companion.NOTIFICATION_ID)
-            try {
-                Thread.sleep(SNOOZE_TIME)
-            } catch (ex: InterruptedException) {
-                Thread.currentThread().interrupt()
-            }
-            notificationManagerCompat.notify(
-                StandaloneMainActivity.Companion.NOTIFICATION_ID,
-                notification
-            )
+        val notification: Notification = notificationCompatBuilder.build()
+        val notificationManagerCompat = NotificationManagerCompat.from(
+            applicationContext
+        )
+        notificationManagerCompat.cancel(StandaloneMainActivity.Companion.NOTIFICATION_ID)
+        try {
+            Thread.sleep(SNOOZE_TIME)
+        } catch (ex: InterruptedException) {
+            Thread.currentThread().interrupt()
         }
+        notificationManagerCompat.notify(
+            StandaloneMainActivity.Companion.NOTIFICATION_ID,
+            notification
+        )
     }
 
     /*
@@ -192,20 +189,16 @@ class BigTextIntentService : IntentService("BigTextIntentService") {
          * main content intent, that is, skipping the call setContentIntent(). However, you need to
          * still allow the user to open the native Wear app from the Notification itself, so you
          * add an action to launch the app.
-         */if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+         */
 
-            // Enables launching app in Wear 2.0 while keeping the old Notification Style behavior.
-            val mainAction = NotificationCompat.Action.Builder(
-                R.drawable.ic_launcher,
-                "Open",
-                mainPendingIntent
-            )
-                .build()
-            notificationCompatBuilder.addAction(mainAction)
-        } else {
-            // Wear 1.+ still functions the same, so we set the main content intent.
-            notificationCompatBuilder.setContentIntent(mainPendingIntent)
-        }
+        // Enables launching app in Wear 2.0 while keeping the old Notification Style behavior.
+        val mainAction = NotificationCompat.Action.Builder(
+            R.drawable.ic_launcher,
+            "Open",
+            mainPendingIntent
+        )
+            .build()
+        notificationCompatBuilder.addAction(mainAction)
         return notificationCompatBuilder
     }
 

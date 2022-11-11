@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.android.wearable.wear.wearnotifications;
+package com.example.android.wearable.wear.wearnotifications.views;
 
 import android.widget.ImageView;
 
@@ -25,6 +25,8 @@ import android.widget.TextView;
 
 import androidx.core.app.NotificationCompat;
 import androidx.wear.widget.WearableRecyclerView;
+
+import com.example.android.wearable.wear.wearnotifications.R;
 
 /**
  * Provides a binding from {@link NotificationCompat.Style} data set to views displayed within the

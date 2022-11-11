@@ -32,7 +32,7 @@ class MessagingMainActivity : Activity() {
 
         // Cancel Notification
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.cancel(StandaloneMainActivity.Companion.NOTIFICATION_ID)
+        notificationManager.cancel(StandaloneMainActivity.NOTIFICATION_ID)
 
         // TODO: Handle and display message/conversation from your database
 

@@ -26,6 +26,9 @@ import androidx.wear.ambient.AmbientModeSupport.AmbientCallback
 import androidx.wear.widget.WearableLinearLayoutManager
 import androidx.wear.widget.WearableRecyclerView
 import com.example.android.wearable.wear.wearnotifications.SettingsLauncher.openNotificationSettingsForApp
+import com.example.android.wearable.wear.wearnotifications.views.Controller
+import com.example.android.wearable.wear.wearnotifications.views.CustomRecyclerAdapter
+import com.example.android.wearable.wear.wearnotifications.views.ScalingScrollLayoutCallback
 import com.google.android.material.snackbar.Snackbar
 
 /**
