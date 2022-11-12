@@ -20,7 +20,6 @@ import android.app.Notification
 import android.app.PendingIntent
 import android.content.Intent
 import android.graphics.BitmapFactory
-import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -28,7 +27,7 @@ import androidx.core.content.ContextCompat
 import com.example.android.wearable.wear.common.mock.MockDatabase
 import com.example.android.wearable.wear.wearnotifications.GlobalNotificationBuilder
 import com.example.android.wearable.wear.wearnotifications.R
-import com.example.android.wearable.wear.wearnotifications.StandaloneMainActivity
+import com.example.android.wearable.wear.wearnotifications.main.StandaloneMainActivity
 import java.util.concurrent.TimeUnit
 
 /**
@@ -56,7 +55,7 @@ class BigTextIntentService : IntentService("BigTextIntentService") {
         val notificationManagerCompat = NotificationManagerCompat.from(
             applicationContext
         )
-        notificationManagerCompat.cancel(StandaloneMainActivity.Companion.NOTIFICATION_ID)
+        notificationManagerCompat.cancel(StandaloneMainActivity.NOTIFICATION_ID)
     }
 
     /**
@@ -80,14 +79,14 @@ class BigTextIntentService : IntentService("BigTextIntentService") {
         val notificationManagerCompat = NotificationManagerCompat.from(
             applicationContext
         )
-        notificationManagerCompat.cancel(StandaloneMainActivity.Companion.NOTIFICATION_ID)
+        notificationManagerCompat.cancel(StandaloneMainActivity.NOTIFICATION_ID)
         try {
             Thread.sleep(SNOOZE_TIME)
         } catch (ex: InterruptedException) {
             Thread.currentThread().interrupt()
         }
         notificationManagerCompat.notify(
-            StandaloneMainActivity.Companion.NOTIFICATION_ID,
+            StandaloneMainActivity.NOTIFICATION_ID,
             notification
         )
     }

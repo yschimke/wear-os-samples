@@ -4,7 +4,6 @@ import android.app.Activity
 import android.app.Application
 import android.app.Notification
 import android.app.PendingIntent
-import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.util.Log
@@ -22,6 +21,7 @@ import com.example.android.wearable.wear.wearnotifications.handlers.BigTextMainA
 import com.example.android.wearable.wear.wearnotifications.handlers.InboxMainActivity
 import com.example.android.wearable.wear.wearnotifications.handlers.MessagingIntentService
 import com.example.android.wearable.wear.wearnotifications.handlers.MessagingMainActivity
+import com.example.android.wearable.wear.wearnotifications.main.StandaloneMainActivity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 

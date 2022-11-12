@@ -29,7 +29,7 @@ import androidx.core.content.ContextCompat
 import com.example.android.wearable.wear.common.mock.MockDatabase
 import com.example.android.wearable.wear.wearnotifications.GlobalNotificationBuilder
 import com.example.android.wearable.wear.wearnotifications.R
-import com.example.android.wearable.wear.wearnotifications.StandaloneMainActivity
+import com.example.android.wearable.wear.wearnotifications.main.StandaloneMainActivity
 
 /**
  * Asynchronously handles updating messaging app posts (and active Notification) with replies from

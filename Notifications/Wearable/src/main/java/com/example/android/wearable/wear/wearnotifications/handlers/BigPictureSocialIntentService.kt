@@ -28,7 +28,7 @@ import androidx.core.content.ContextCompat
 import com.example.android.wearable.wear.common.mock.MockDatabase
 import com.example.android.wearable.wear.wearnotifications.GlobalNotificationBuilder
 import com.example.android.wearable.wear.wearnotifications.R
-import com.example.android.wearable.wear.wearnotifications.StandaloneMainActivity
+import com.example.android.wearable.wear.wearnotifications.main.StandaloneMainActivity
 
 /**
  * Asynchronously handles updating social app posts (and active Notification) with comments from
@@ -93,7 +93,7 @@ class BigPictureSocialIntentService : IntentService("BigPictureSocialIntentServi
                 applicationContext
             )
             notificationManagerCompat.notify(
-                StandaloneMainActivity.Companion.NOTIFICATION_ID,
+                StandaloneMainActivity.NOTIFICATION_ID,
                 updatedNotification
             )
         }

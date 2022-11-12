@@ -15,20 +15,32 @@ limitations under the License.
  */
 package com.example.android.wearable.wear.wearnotifications.handlers
 
-import android.app.Activity
 import android.app.NotificationManager
 import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.wear.compose.material.Text
 import com.example.android.wearable.wear.wearnotifications.R
-import com.example.android.wearable.wear.wearnotifications.StandaloneMainActivity
+import com.example.android.wearable.wear.wearnotifications.main.StandaloneMainActivity
 
 /**
  * Template class meant to include functionality for your Social App. (This project's main focus
  * is on Notification Styles.)
  */
-class BigPictureSocialMainActivity : Activity() {
+class BigPictureSocialMainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_big_picture_main)
+
+        setContent {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(text = stringResource(id = R.string.main_text_activity_big_picture_main))
+            }
+        }
 
         // Cancel Notification
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager

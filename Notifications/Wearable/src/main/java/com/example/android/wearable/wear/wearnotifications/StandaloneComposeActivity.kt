@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.android.wearable.wear.wearnotifications.views
+package com.example.android.wearable.wear.wearnotifications
 
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.core.app.NotificationCompat
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.wear.ambient.AmbientModeSupport
-import com.example.android.wearable.wear.wearnotifications.WearNotificationApp
 
 /**
  * Demonstrates best practice for [NotificationCompat] Notifications created by local
@@ -35,7 +35,12 @@ class StandaloneComposeActivity : FragmentActivity() {
         AmbientModeSupport.attach(this)
 
         setContent {
-            WearNotificationApp()
+            val viewModel = viewModel<MainViewModel>()
+            WearNotificationApp(
+                bigPictureClick = { viewModel.generateBigPictureStyleNotification(this) },
+                inboxClick = { viewModel.generateInboxStyleNotification(this) },
+                bigTextClick = { viewModel.generateBigTextStyleNotification(this) },
+                messagingClick = { viewModel.generateMessagingStyleNotification(this) })
         }
     }
 }

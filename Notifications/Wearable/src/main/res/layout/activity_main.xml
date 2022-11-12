@@ -20,7 +20,7 @@
     android:id="@+id/mainFrameLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.example.android.wearable.wear.wearnotifications.StandaloneMainActivity">
+    tools:context="com.example.android.wearable.wear.wearnotifications.views.StandaloneMainActivity">
 
     <androidx.wear.widget.WearableRecyclerView
         android:id="@+id/recycler_view"
