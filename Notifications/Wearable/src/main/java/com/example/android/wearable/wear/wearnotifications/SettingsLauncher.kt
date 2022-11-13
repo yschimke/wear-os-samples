@@ -16,9 +16,8 @@ object SettingsLauncher {
     fun Context.openNotificationSettingsForApp() {
         // Links to this app's notification settings
         val intent = Intent()
-        intent.action = "android.settings.APP_NOTIFICATION_SETTINGS"
-        intent.putExtra("app_package", packageName)
-        intent.putExtra("app_uid", applicationInfo.uid)
+        intent.action = "com.google.android.clockwork.settings.APP_NOTIFICATIONS"
+        intent.putExtra("app_pkg", packageName)
         startActivity(intent)
     }
 }

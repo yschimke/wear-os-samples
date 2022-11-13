@@ -57,4 +57,5 @@
     </string>
 
     <string name="floating_text">Notification Style</string>
+    <string name="settings_chip">Settings</string>
 </resources>

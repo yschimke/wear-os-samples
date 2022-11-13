@@ -15,6 +15,7 @@ fun WearMainScreen(
     inboxClick: () -> Unit,
     bigTextClick: () -> Unit,
     messagingClick: () -> Unit,
+    launchSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ScalingLazyColumn(modifier = modifier) {
@@ -57,6 +58,15 @@ fun WearMainScreen(
                     Text(text = stringResource(id = R.string.big_text_chip))
                 },
                 onClick = bigTextClick
+            )
+        }
+        item {
+            Chip(
+                modifier = Modifier.fillMaxWidth(),
+                label = {
+                    Text(text = stringResource(id = R.string.settings_chip))
+                },
+                onClick = launchSettings
             )
         }
     }

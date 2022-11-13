@@ -21,6 +21,7 @@ import androidx.core.app.NotificationCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.wear.ambient.AmbientModeSupport
+import com.example.android.wearable.wear.wearnotifications.SettingsLauncher.openNotificationSettingsForApp
 
 /**
  * Demonstrates best practice for [NotificationCompat] Notifications created by local
@@ -40,7 +41,9 @@ class StandaloneComposeActivity : FragmentActivity() {
                 bigPictureClick = { viewModel.generateBigPictureStyleNotification(this) },
                 inboxClick = { viewModel.generateInboxStyleNotification(this) },
                 bigTextClick = { viewModel.generateBigTextStyleNotification(this) },
-                messagingClick = { viewModel.generateMessagingStyleNotification(this) })
+                messagingClick = { viewModel.generateMessagingStyleNotification(this) },
+                launchSettings = { openNotificationSettingsForApp() }
+            )
         }
     }
 }

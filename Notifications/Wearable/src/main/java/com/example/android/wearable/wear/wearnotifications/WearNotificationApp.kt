@@ -9,6 +9,7 @@ fun WearNotificationApp(
     inboxClick: () -> Unit,
     bigTextClick: () -> Unit,
     messagingClick: () -> Unit,
+    launchSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     WearMainScreen(
@@ -16,6 +17,7 @@ fun WearNotificationApp(
         bigPictureClick = bigPictureClick,
         inboxClick = inboxClick,
         bigTextClick = bigTextClick,
-        messagingClick = messagingClick
+        messagingClick = messagingClick,
+        launchSettings = launchSettings
     )
 }
