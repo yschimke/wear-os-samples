@@ -137,7 +137,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val notificationCompatBuilder = NotificationCompat.Builder(
             getApplication(), notificationChannelId
         )
-        GlobalNotificationBuilder.notificationCompatBuilderInstance = notificationCompatBuilder
         notificationCompatBuilder // BIG_TEXT_STYLE sets title and content.
             .setStyle(bigTextStyle)
             .setContentTitle(bigTextStyleReminderAppData.contentTitle)
@@ -291,7 +290,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val notificationCompatBuilder = NotificationCompat.Builder(
             getApplication(), notificationChannelId
         )
-        GlobalNotificationBuilder.notificationCompatBuilderInstance = notificationCompatBuilder
         notificationCompatBuilder // BIG_PICTURE_STYLE sets title and content.
             .setStyle(bigPictureStyle)
             .setContentTitle(bigPictureStyleSocialAppData.contentTitle)
@@ -384,7 +382,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val notificationCompatBuilder = NotificationCompat.Builder(
             getApplication(), notificationChannelId
         )
-        GlobalNotificationBuilder.notificationCompatBuilderInstance = notificationCompatBuilder
         notificationCompatBuilder // INBOX_STYLE sets title and content.
             .setStyle(inboxStyle)
             .setContentTitle(inboxStyleEmailAppData.contentTitle)
@@ -544,7 +541,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val notificationCompatBuilder = NotificationCompat.Builder(
             getApplication(), notificationChannelId
         )
-        GlobalNotificationBuilder.notificationCompatBuilderInstance = notificationCompatBuilder
         notificationCompatBuilder // MESSAGING_STYLE sets title and content for Wear 1.+ and Wear 2.0 devices.
             .setStyle(messagingStyle)
             .setContentTitle(contentTitle)

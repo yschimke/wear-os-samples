@@ -27,7 +27,6 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.RemoteInput
 import androidx.core.content.ContextCompat
 import com.example.android.wearable.wear.common.mock.MockDatabase
-import com.example.android.wearable.wear.wearnotifications.GlobalNotificationBuilder
 import com.example.android.wearable.wear.wearnotifications.R
 import com.example.android.wearable.wear.wearnotifications.main.StandaloneMainActivity
 
@@ -75,15 +74,7 @@ class BigPictureSocialIntentService : Service() {
              *  to update, retain the Builder as option 2 outlines.
              */
 
-            // Retrieves NotificationCompat.Builder used to create initial Notification
-            var notificationCompatBuilder =
-                GlobalNotificationBuilder.notificationCompatBuilderInstance
-
-            // Recreate builder from persistent state if app process is killed
-            if (notificationCompatBuilder == null) {
-                // Note: New builder set globally in the method
-                notificationCompatBuilder = recreateBuilderWithBigPictureStyle()
-            }
+            val notificationCompatBuilder = recreateBuilderWithBigPictureStyle()
 
             // Updates active Notification
             val updatedNotification =
@@ -198,7 +189,6 @@ class BigPictureSocialIntentService : Service() {
         val notificationCompatBuilder = NotificationCompat.Builder(
             applicationContext, notificationChannelId
         )
-        GlobalNotificationBuilder.notificationCompatBuilderInstance = notificationCompatBuilder
         notificationCompatBuilder
             .setStyle(bigPictureStyle)
             .setContentTitle(bigPictureStyleSocialAppData.contentTitle)

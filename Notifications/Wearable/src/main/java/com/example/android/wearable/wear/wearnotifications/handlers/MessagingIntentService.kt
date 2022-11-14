@@ -28,7 +28,6 @@ import androidx.core.app.Person
 import androidx.core.app.RemoteInput
 import androidx.core.content.ContextCompat
 import com.example.android.wearable.wear.common.mock.MockDatabase
-import com.example.android.wearable.wear.wearnotifications.GlobalNotificationBuilder
 import com.example.android.wearable.wear.wearnotifications.R
 import com.example.android.wearable.wear.wearnotifications.main.StandaloneMainActivity
 
@@ -76,14 +75,7 @@ class MessagingIntentService : Service() {
              */
 
             // Retrieves NotificationCompat.Builder used to create initial Notification
-            var notificationCompatBuilder =
-                GlobalNotificationBuilder.notificationCompatBuilderInstance
-
-            // Recreate builder from persistent state if app process is killed
-            if (notificationCompatBuilder == null) {
-                // Note: New builder set globally in the method
-                notificationCompatBuilder = recreateBuilderWithMessagingStyle()
-            }
+            val notificationCompatBuilder = recreateBuilderWithMessagingStyle()
 
             // Since we are adding to the MessagingStyle, we need to first retrieve the
             // current MessagingStyle from the Notification itself.
@@ -222,7 +214,6 @@ class MessagingIntentService : Service() {
         val notificationCompatBuilder = NotificationCompat.Builder(
             applicationContext, notificationChannelId
         )
-        GlobalNotificationBuilder.notificationCompatBuilderInstance = notificationCompatBuilder
         notificationCompatBuilder // MESSAGING_STYLE sets title and content for Wear 1.+ and Wear 2.0 devices.
             .setStyle(messagingStyle)
             .setContentTitle(contentTitle)
@@ -241,7 +232,7 @@ class MessagingIntentService : Service() {
                     R.color.colorPrimary
                 )
             ) // Number of new notifications for API <24 (Wear 1.+) devices.
-            .setSubText(Integer.toString(messagingStyleCommsAppData.numberOfNewMessages))
+            .setSubText(messagingStyleCommsAppData.numberOfNewMessages.toString())
             .addAction(replyAction)
             .setCategory(Notification.CATEGORY_MESSAGE) // Sets priority for 25 and below. For 26 and above, 'priority' is deprecated for
             // 'importance' which is set in the NotificationChannel. The integers representing

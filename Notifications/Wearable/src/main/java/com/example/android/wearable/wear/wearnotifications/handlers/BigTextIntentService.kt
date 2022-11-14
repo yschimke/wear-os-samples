@@ -15,7 +15,6 @@ limitations under the License.
  */
 package com.example.android.wearable.wear.wearnotifications.handlers
 
-import android.app.IntentService
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.Service
@@ -27,7 +26,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.example.android.wearable.wear.common.mock.MockDatabase
-import com.example.android.wearable.wear.wearnotifications.GlobalNotificationBuilder
 import com.example.android.wearable.wear.wearnotifications.R
 import com.example.android.wearable.wear.wearnotifications.main.StandaloneMainActivity
 import java.util.concurrent.TimeUnit
@@ -69,17 +67,7 @@ class BigTextIntentService : Service() {
     private fun handleActionSnooze() {
         Log.d(TAG, "handleActionSnooze()")
 
-        // You could use NotificationManager.getActiveNotifications() if you are targeting SDK 23
-        // and above, but we are targeting devices with lower SDK API numbers, so we saved the
-        // builder globally and get the notification back to recreate it later.
-        var notificationCompatBuilder =
-            GlobalNotificationBuilder.notificationCompatBuilderInstance
-
-        // Recreate builder from persistent state if app process is killed
-        if (notificationCompatBuilder == null) {
-            // Note: New builder set globally in the method
-            notificationCompatBuilder = recreateBuilderWithBigTextStyle()
-        }
+        val notificationCompatBuilder = recreateBuilderWithBigTextStyle()
         val notification: Notification = notificationCompatBuilder.build()
         val notificationManagerCompat = NotificationManagerCompat.from(
             applicationContext
@@ -187,7 +175,6 @@ class BigTextIntentService : Service() {
         val notificationCompatBuilder = NotificationCompat.Builder(
             applicationContext, notificationChannelId
         )
-        GlobalNotificationBuilder.notificationCompatBuilderInstance = notificationCompatBuilder
         notificationCompatBuilder
             .setStyle(bigTextStyle)
             .setContentTitle(bigTextStyleReminderAppData.contentTitle)
