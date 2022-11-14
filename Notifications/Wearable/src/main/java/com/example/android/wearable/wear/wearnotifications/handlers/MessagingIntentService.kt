@@ -15,11 +15,12 @@ limitations under the License.
  */
 package com.example.android.wearable.wear.wearnotifications.handlers
 
-import android.app.IntentService
 import android.app.Notification
 import android.app.PendingIntent
+import android.app.Service
 import android.content.Intent
 import android.graphics.BitmapFactory
+import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -35,8 +36,8 @@ import com.example.android.wearable.wear.wearnotifications.main.StandaloneMainAc
  * Asynchronously handles updating messaging app posts (and active Notification) with replies from
  * user in a conversation. Notification for social app use MessagingStyle.
  */
-class MessagingIntentService : IntentService("MessagingIntentService") {
-    override fun onHandleIntent(intent: Intent?) {
+class MessagingIntentService : Service() {
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "onHandleIntent(): $intent")
         if (intent != null) {
             val action = intent.action
@@ -44,7 +45,10 @@ class MessagingIntentService : IntentService("MessagingIntentService") {
                 handleActionReply(getMessage(intent))
             }
         }
+        return START_REDELIVER_INTENT
     }
+
+    override fun onBind(intent: Intent?): IBinder? = null
 
     /** Handles action for replying to messages from the notification.  */
     private fun handleActionReply(replyCharSequence: CharSequence?) {
@@ -104,10 +108,14 @@ class MessagingIntentService : IntentService("MessagingIntentService") {
             val notificationManagerCompat = NotificationManagerCompat.from(
                 applicationContext
             )
-            notificationManagerCompat.notify(
-                StandaloneMainActivity.NOTIFICATION_ID,
-                notification
-            )
+            try {
+                notificationManagerCompat.notify(
+                    StandaloneMainActivity.NOTIFICATION_ID,
+                    notification
+                )
+            } catch (se: SecurityException) {
+                Log.e(TAG, "Unable to post notification from notification service", se)
+            }
         }
     }
 
@@ -183,7 +191,12 @@ class MessagingIntentService : IntentService("MessagingIntentService") {
         // Create PendingIntent for service that handles input.
         val replyIntent = Intent(this, MessagingIntentService::class.java)
         replyIntent.action = ACTION_REPLY
-        val replyActionPendingIntent = PendingIntent.getService(this, 0, replyIntent, 0)
+        val replyActionPendingIntent = PendingIntent.getService(
+            this,
+            0,
+            replyIntent,
+            PendingIntent.FLAG_MUTABLE
+        )
 
         // Enable action to appear inline on Wear 2.0 (24+). This means it will appear over the
         // lower portion of the Notification for easy action (only possible for one action).

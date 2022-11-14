@@ -176,10 +176,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             .build()
         notificationCompatBuilder.addAction(mainAction)
         val notification = notificationCompatBuilder.build()
-        mNotificationManagerCompat.notify(StandaloneMainActivity.NOTIFICATION_ID, notification)
+
+        postNotification(notification)
 
         // Close app to demonstrate notification in steam.
         activity.finish()
+    }
+
+    private fun postNotification(notification: Notification) {
+        try {
+            mNotificationManagerCompat.notify(StandaloneMainActivity.NOTIFICATION_ID, notification)
+        } catch (se: SecurityException) {
+            // TODO show snackbar
+            Log.e("MainViewModel", "Unable to post notification", se)
+        }
     }
 
     /*
@@ -255,7 +265,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val replyIntent = Intent(activity, BigPictureSocialIntentService::class.java)
         replyIntent.action = BigPictureSocialIntentService.ACTION_COMMENT
         val replyActionPendingIntent =
-            PendingIntent.getService(activity, 0, replyIntent, PendingIntent.FLAG_IMMUTABLE)
+            PendingIntent.getService(activity, 0, replyIntent, PendingIntent.FLAG_UPDATE_CURRENT)
 
         // Enable action to appear inline on Wear 2.0 (24+). This means it will appear over the
         // lower portion of the Notification for easy action (only possible for one action).
@@ -315,7 +325,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             notificationCompatBuilder.addPerson(name)
         }
         val notification = notificationCompatBuilder.build()
-        mNotificationManagerCompat.notify(StandaloneMainActivity.NOTIFICATION_ID, notification)
+
+        postNotification(notification)
 
         // Close app to demonstrate notification in steam.
         activity.finish()
@@ -411,7 +422,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             notificationCompatBuilder.addPerson(name)
         }
         val notification = notificationCompatBuilder.build()
-        mNotificationManagerCompat.notify(StandaloneMainActivity.NOTIFICATION_ID, notification)
+
+        postNotification(notification)
 
         // Close app to demonstrate notification in steam.
         activity.finish()
@@ -501,7 +513,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val replyIntent = Intent(activity, MessagingIntentService::class.java)
         replyIntent.action = MessagingIntentService.ACTION_REPLY
         val replyActionPendingIntent =
-            PendingIntent.getService(activity, 0, replyIntent, PendingIntent.FLAG_IMMUTABLE)
+            PendingIntent.getService(activity, 0, replyIntent, PendingIntent.FLAG_UPDATE_CURRENT)
 
         // Enable action to appear inline on Wear 2.0 (24+). This means it will appear over the
         // lower portion of the Notification for easy action (only possible for one action).
@@ -567,7 +579,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             notificationCompatBuilder.addPerson(person.uri)
         }
         val notification = notificationCompatBuilder.build()
-        mNotificationManagerCompat.notify(StandaloneMainActivity.NOTIFICATION_ID, notification)
+
+        postNotification(notification)
 
         // Close app to demonstrate notification in steam.
         activity.finish()

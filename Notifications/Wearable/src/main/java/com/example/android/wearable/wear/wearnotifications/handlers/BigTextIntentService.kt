@@ -18,8 +18,10 @@ package com.example.android.wearable.wear.wearnotifications.handlers
 import android.app.IntentService
 import android.app.Notification
 import android.app.PendingIntent
+import android.app.Service
 import android.content.Intent
 import android.graphics.BitmapFactory
+import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -34,8 +36,8 @@ import java.util.concurrent.TimeUnit
  * Asynchronously handles snooze and dismiss actions for reminder app (and active Notification).
  * Notification for for reminder app uses BigTextStyle.
  */
-class BigTextIntentService : IntentService("BigTextIntentService") {
-    override fun onHandleIntent(intent: Intent?) {
+class BigTextIntentService : Service() {
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "onHandleIntent(): $intent")
         if (intent != null) {
             val action = intent.action
@@ -45,7 +47,10 @@ class BigTextIntentService : IntentService("BigTextIntentService") {
                 handleActionSnooze()
             }
         }
+        return START_REDELIVER_INTENT
     }
+
+    override fun onBind(intent: Intent?): IBinder? = null
 
     /**
      * Handles action Dismiss in the provided background thread.
@@ -85,10 +90,18 @@ class BigTextIntentService : IntentService("BigTextIntentService") {
         } catch (ex: InterruptedException) {
             Thread.currentThread().interrupt()
         }
-        notificationManagerCompat.notify(
-            StandaloneMainActivity.NOTIFICATION_ID,
-            notification
-        )
+        try {
+            notificationManagerCompat.notify(
+                StandaloneMainActivity.NOTIFICATION_ID,
+                notification
+            )
+        } catch (se: SecurityException) {
+            Log.e(
+                TAG,
+                "Unable to post notification from notification service",
+                se
+            )
+        }
     }
 
     /*
@@ -137,7 +150,12 @@ class BigTextIntentService : IntentService("BigTextIntentService") {
         val snoozeIntent = Intent(this, BigTextIntentService::class.java)
         snoozeIntent.action =
             ACTION_SNOOZE
-        val snoozePendingIntent = PendingIntent.getService(this, 0, snoozeIntent, 0)
+        val snoozePendingIntent = PendingIntent.getService(
+            this,
+            0,
+            snoozeIntent,
+            PendingIntent.FLAG_IMMUTABLE
+        )
         val snoozeAction = NotificationCompat.Action.Builder(
             R.drawable.ic_alarm_white_48dp,
             "Snooze",
@@ -149,7 +167,12 @@ class BigTextIntentService : IntentService("BigTextIntentService") {
         val dismissIntent = Intent(this, BigTextIntentService::class.java)
         dismissIntent.action =
             ACTION_DISMISS
-        val dismissPendingIntent = PendingIntent.getService(this, 0, dismissIntent, 0)
+        val dismissPendingIntent = PendingIntent.getService(
+            this,
+            0,
+            dismissIntent,
+            PendingIntent.FLAG_IMMUTABLE
+        )
         val dismissAction = NotificationCompat.Action.Builder(
             R.drawable.ic_cancel_white_48dp,
             "Dismiss",

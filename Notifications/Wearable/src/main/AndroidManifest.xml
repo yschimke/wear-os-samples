@@ -19,6 +19,8 @@
           android:versionCode="1"
           android:versionName="1.0">
 
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
     <uses-feature android:name="android.hardware.type.watch"/>
     <!-- Required for Always-on. -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -47,7 +49,8 @@
         <!--If you want your app to run on pre-22, then set required to false -->
         <uses-library android:name="com.google.android.wearable" android:required="false" />
 
-        <activity android:name=".StandaloneComposeActivity">
+        <activity android:name=".StandaloneComposeActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

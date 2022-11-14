@@ -15,11 +15,12 @@ limitations under the License.
  */
 package com.example.android.wearable.wear.wearnotifications.handlers
 
-import android.app.IntentService
 import android.app.Notification
 import android.app.PendingIntent
+import android.app.Service
 import android.content.Intent
 import android.graphics.BitmapFactory
+import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -34,16 +35,18 @@ import com.example.android.wearable.wear.wearnotifications.main.StandaloneMainAc
  * Asynchronously handles updating social app posts (and active Notification) with comments from
  * user. Notification for social app use BigPictureStyle.
  */
-class BigPictureSocialIntentService : IntentService("BigPictureSocialIntentService") {
-    override fun onHandleIntent(intent: Intent?) {
+class BigPictureSocialIntentService : Service() {
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "onHandleIntent(): $intent")
         if (intent != null) {
-            val action = intent.action
-            if (ACTION_COMMENT == action) {
+            if (ACTION_COMMENT == intent.action) {
                 handleActionComment(getMessage(intent))
             }
         }
+        return START_REDELIVER_INTENT
     }
+
+    override fun onBind(intent: Intent?): IBinder? = null
 
     /**
      * Handles action for adding a comment from the notification.
@@ -76,7 +79,7 @@ class BigPictureSocialIntentService : IntentService("BigPictureSocialIntentServi
             var notificationCompatBuilder =
                 GlobalNotificationBuilder.notificationCompatBuilderInstance
 
-                    // Recreate builder from persistent state if app process is killed
+            // Recreate builder from persistent state if app process is killed
             if (notificationCompatBuilder == null) {
                 // Note: New builder set globally in the method
                 notificationCompatBuilder = recreateBuilderWithBigPictureStyle()
@@ -92,10 +95,18 @@ class BigPictureSocialIntentService : IntentService("BigPictureSocialIntentServi
             val notificationManagerCompat = NotificationManagerCompat.from(
                 applicationContext
             )
-            notificationManagerCompat.notify(
-                StandaloneMainActivity.NOTIFICATION_ID,
-                updatedNotification
-            )
+            try {
+                notificationManagerCompat.notify(
+                    StandaloneMainActivity.NOTIFICATION_ID,
+                    updatedNotification
+                )
+            } catch (se: SecurityException) {
+                Log.e(
+                    TAG,
+                    "Unable to post notification from notification service",
+                    se
+                )
+            }
         }
     }
 
@@ -148,7 +159,7 @@ class BigPictureSocialIntentService : IntentService("BigPictureSocialIntentServi
             this,
             0,
             mainIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT
+            PendingIntent.FLAG_IMMUTABLE
         )
 
         // 4. Set up a RemoteInput Action, so users can input (keyboard, drawing, voice) directly
@@ -160,7 +171,12 @@ class BigPictureSocialIntentService : IntentService("BigPictureSocialIntentServi
             .build()
         val replyIntent = Intent(this, BigPictureSocialIntentService::class.java)
         replyIntent.action = ACTION_COMMENT
-        val replyActionPendingIntent = PendingIntent.getService(this, 0, replyIntent, 0)
+        val replyActionPendingIntent = PendingIntent.getService(
+            this,
+            0,
+            replyIntent,
+            PendingIntent.FLAG_MUTABLE
+        )
 
         // Enable action to appear inline on Wear 2.0 (24+). This means it will appear over the
         // lower portion of the Notification for easy action (only possible for one action).
