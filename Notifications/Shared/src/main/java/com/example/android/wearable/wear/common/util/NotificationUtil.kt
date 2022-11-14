@@ -15,6 +15,7 @@
  */
 package com.example.android.wearable.wear.common.util
 
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -45,6 +46,7 @@ object NotificationUtil {
             val channelLockscreenVisibility = mockNotificationData.channelLockscreenVisibility
 
             // Initializes NotificationChannel.
+            @SuppressLint("WrongConstant")
             val notificationChannel = NotificationChannel(channelId, channelName, channelImportance)
             notificationChannel.description = channelDescription
             notificationChannel.enableVibration(channelEnableVibrate)
