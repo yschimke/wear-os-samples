@@ -20,7 +20,9 @@ import androidx.activity.compose.setContent
 import androidx.core.app.NotificationCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import androidx.wear.ambient.AmbientModeSupport
+import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
 import com.example.android.wearable.wear.wearnotifications.SettingsLauncher.openNotificationSettingsForApp
 
 /**
@@ -29,6 +31,8 @@ import com.example.android.wearable.wear.wearnotifications.SettingsLauncher.open
  * [NotificationCompat.Style].
  */
 class StandaloneComposeActivity : FragmentActivity() {
+    lateinit var navController: NavHostController
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -36,8 +40,11 @@ class StandaloneComposeActivity : FragmentActivity() {
         AmbientModeSupport.attach(this)
 
         setContent {
+            navController = rememberSwipeDismissableNavController()
+
             val viewModel = viewModel<MainViewModel>()
             WearNotificationApp(
+                navController = navController,
                 bigPictureClick = { viewModel.generateBigPictureStyleNotification(this) },
                 inboxClick = { viewModel.generateInboxStyleNotification(this) },
                 bigTextClick = { viewModel.generateBigTextStyleNotification(this) },

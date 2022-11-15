@@ -21,39 +21,33 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.core.content.ContextCompat
 import androidx.wear.compose.material.Text
 import com.example.android.wearable.wear.wearnotifications.R
 import com.example.android.wearable.wear.wearnotifications.main.StandaloneMainActivity
+import com.google.android.horologist.compose.layout.fillMaxRectangle
 
-/**
- * Template class meant to include functionality for your Messaging App. (This project's main focus
- * is on Notification Styles.)
- */
-class MessagingMainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        setContent {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(text = stringResource(id = R.string.main_text_activity_messaging_main))
-            }
-        }
-
-        // Cancel Notification
-        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.cancel(StandaloneMainActivity.NOTIFICATION_ID)
-
-        // TODO: Handle and display message/conversation from your database
-
-        // NOTE: You can retrieve the EXTRA_REMOTE_INPUT_DRAFT sent by the system when a user
-        // inadvertently closes a messaging notification to pre-populate the reply text field so
-        // the user can finish their reply.
+@Composable
+public fun MessagingMainScreen() {
+    Box(modifier = Modifier.fillMaxRectangle(), contentAlignment = Alignment.Center) {
+        Text(text = stringResource(id = R.string.main_text_activity_messaging_main))
     }
 
-    companion object {
-        private const val TAG = "MessagingMainActivity"
+    val context = LocalContext.current
+    SideEffect {
+        // Cancel Notification
+        val notificationManager = ContextCompat.getSystemService(
+            context,
+            NotificationManager::class.java
+        ) as NotificationManager
+        notificationManager.cancel(StandaloneMainActivity.NOTIFICATION_ID)
+
+        // TODO: Handle and display reminder from your database
     }
 }

@@ -25,8 +25,10 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import com.example.android.wearable.wear.common.mock.MockDatabase
 import com.example.android.wearable.wear.wearnotifications.R
+import com.example.android.wearable.wear.wearnotifications.deepLinkPrefix
 import com.example.android.wearable.wear.wearnotifications.main.StandaloneMainActivity
 import java.util.concurrent.TimeUnit
 
@@ -123,7 +125,7 @@ class BigTextIntentService : Service() {
 
 
         // 3. Set up main Intent for notification.
-        val mainIntent = Intent(this, BigTextMainActivity::class.java)
+        val mainIntent = Intent(Intent.ACTION_VIEW, "$deepLinkPrefix/text?id=$StandaloneMainActivity.NOTIFICATION_ID".toUri())
         val mainPendingIntent = PendingIntent.getActivity(
             this,
             0,

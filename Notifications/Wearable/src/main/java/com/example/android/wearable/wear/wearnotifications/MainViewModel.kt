@@ -11,16 +11,13 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.RemoteInput
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
 import com.example.android.wearable.wear.common.mock.MockDatabase
 import com.example.android.wearable.wear.common.util.NotificationUtil
 import com.example.android.wearable.wear.wearnotifications.handlers.BigPictureSocialIntentService
-import com.example.android.wearable.wear.wearnotifications.handlers.BigPictureSocialMainActivity
 import com.example.android.wearable.wear.wearnotifications.handlers.BigTextIntentService
-import com.example.android.wearable.wear.wearnotifications.handlers.BigTextMainActivity
-import com.example.android.wearable.wear.wearnotifications.handlers.InboxMainActivity
 import com.example.android.wearable.wear.wearnotifications.handlers.MessagingIntentService
-import com.example.android.wearable.wear.wearnotifications.handlers.MessagingMainActivity
 import com.example.android.wearable.wear.wearnotifications.main.StandaloneMainActivity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -78,12 +75,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
 
         // 3. Set up main Intent for notification.
-        val mainIntent = Intent(activity, BigTextMainActivity::class.java)
+        val mainIntent = Intent(Intent.ACTION_VIEW, "$deepLinkPrefix/text?id=$StandaloneMainActivity.NOTIFICATION_ID".toUri())
         val mainPendingIntent = PendingIntent.getActivity(
             activity,
             0,
             mainIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT
+            PendingIntent.FLAG_IMMUTABLE
         )
 
 
@@ -242,12 +239,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             NotificationUtil.createNotificationChannel(activity, bigPictureStyleSocialAppData)!!
 
         // 3. Set up main Intent for notification.
-        val mainIntent = Intent(activity, BigPictureSocialMainActivity::class.java)
+        val mainIntent = Intent(Intent.ACTION_VIEW, "$deepLinkPrefix/picture?id=$StandaloneMainActivity.NOTIFICATION_ID".toUri())
         val mainPendingIntent = PendingIntent.getActivity(
             activity,
             0,
             mainIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT
+            PendingIntent.FLAG_IMMUTABLE
         )
 
         // 4. Set up a RemoteInput Action, so users can input (keyboard, drawing, voice) directly
@@ -364,7 +361,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         // 3. Set up main Intent for notification.
-        val mainIntent = Intent(activity, InboxMainActivity::class.java)
+        val mainIntent = Intent(Intent.ACTION_VIEW, "$deepLinkPrefix/inbox?id=$StandaloneMainActivity.NOTIFICATION_ID".toUri())
         val mainPendingIntent = PendingIntent.getActivity(
             activity,
             0,
@@ -487,12 +484,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         messagingStyle.isGroupConversation = messagingStyleCommsAppData.isGroupConversation
 
         // 3. Set up main Intent for notification.
-        val notifyIntent = Intent(activity, MessagingMainActivity::class.java)
+        val notifyIntent = Intent(Intent.ACTION_VIEW, "$deepLinkPrefix/messaging?id=$StandaloneMainActivity.NOTIFICATION_ID".toUri())
         val mainPendingIntent = PendingIntent.getActivity(
             activity,
             0,
             notifyIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT
+            PendingIntent.FLAG_IMMUTABLE
         )
 
 

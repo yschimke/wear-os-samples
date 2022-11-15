@@ -46,41 +46,23 @@
             value: NO_BRIDGING
         -->
 
-        <!--If you want your app to run on pre-22, then set required to false -->
-        <uses-library android:name="com.google.android.wearable" android:required="false" />
-
         <activity android:name=".StandaloneComposeActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
 
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
 
-        <activity
-            android:name=".handlers.BigTextMainActivity"
-            android:label="@string/title_activity_big_text_main"
-            android:taskAffinity="">
-        </activity>
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
 
-        <activity
-            android:name=".handlers.BigPictureSocialMainActivity"
-            android:label="@string/title_activity_big_picture_main"
-            android:taskAffinity="">
-        </activity>
-
-
-        <activity
-            android:name=".handlers.InboxMainActivity"
-            android:label="@string/title_activity_inbox_main"
-            android:taskAffinity="">
-        </activity>
-
-        <activity
-            android:name=".handlers.MessagingMainActivity"
-            android:label="@string/title_activity_messaging_main"
-            android:taskAffinity="">
+                <data
+                    android:host="notifsample"
+                    android:scheme="notifsample" />
+            </intent-filter>
         </activity>
 
         <service

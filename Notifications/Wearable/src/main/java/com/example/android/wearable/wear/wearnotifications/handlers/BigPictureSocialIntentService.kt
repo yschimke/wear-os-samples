@@ -26,8 +26,10 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.RemoteInput
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import com.example.android.wearable.wear.common.mock.MockDatabase
 import com.example.android.wearable.wear.wearnotifications.R
+import com.example.android.wearable.wear.wearnotifications.deepLinkPrefix
 import com.example.android.wearable.wear.wearnotifications.main.StandaloneMainActivity
 
 /**
@@ -145,7 +147,7 @@ class BigPictureSocialIntentService : Service() {
             .setSummaryText(bigPictureStyleSocialAppData.summaryText)
 
         // 3. Set up main Intent for notification.
-        val mainIntent = Intent(this, BigPictureSocialMainActivity::class.java)
+        val mainIntent = Intent(Intent.ACTION_VIEW, "$deepLinkPrefix/picture?id=$StandaloneMainActivity.NOTIFICATION_ID".toUri())
         val mainPendingIntent = PendingIntent.getActivity(
             this,
             0,

@@ -73,23 +73,14 @@ dependencies {
     implementation libs.compose.foundation
     implementation libs.androidx.lifecycle.viewmodel.compose
     implementation libs.androidx.lifecycle.viewmodel.ktx
-
-    // Compose for Wear OS Dependencies
-    // Developer Preview currently Alpha 07, with new releases coming soon.
-    // NOTE: DO NOT INCLUDE a dependency on androidx.compose.material:material.
-    // androidx.wear.compose:compose-material is designed as a replacement not an addition to
-    // androidx.compose.material:material. If there are features from that you feel are missing from
-    // androidx.wear.compose:compose-material please raise a bug to let us know:
-    // https://issuetracker.google.com/issues/new?component=1077552&template=1598429&pli=1
     implementation libs.wear.compose.material
-
-    // Foundation is additive, so you can use the mobile version in your Wear OS app.
     implementation libs.wear.compose.foundation
-
     implementation libs.playservices.wearable
 
     implementation "androidx.wear:wear:1.2.0"
 
     implementation projects.shared
     implementation 'com.google.android.material:material:1.7.0'
+
+    implementation "com.google.android.horologist:horologist-compose-layout:0.2.2"
 }
