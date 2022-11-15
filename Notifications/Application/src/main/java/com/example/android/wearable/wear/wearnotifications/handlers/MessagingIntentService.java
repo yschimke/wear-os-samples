@@ -15,6 +15,10 @@ limitations under the License.
  */
 package com.example.android.wearable.wear.wearnotifications.handlers;
 
+import static android.app.PendingIntent.*;
+
+import static com.example.android.wearable.wear.wearnotifications.MainActivity.NOTIFICATION_ID;
+
 import android.app.IntentService;
 import android.app.Notification;
 import android.app.PendingIntent;
@@ -122,7 +126,12 @@ public class MessagingIntentService extends IntentService {
             // Pushes out the updated Notification
             NotificationManagerCompat notificationManagerCompat =
                     NotificationManagerCompat.from(getApplicationContext());
-            notificationManagerCompat.notify(MainActivity.NOTIFICATION_ID, notification);
+
+            try {
+                notificationManagerCompat.notify(NOTIFICATION_ID, notification);
+            } catch (SecurityException se) {
+                Log.e("MainActivity", "Unable to post notification", se);
+            }
         }
     }
 
@@ -218,7 +227,7 @@ public class MessagingIntentService extends IntentService {
         stackBuilder.addNextIntent(notifyIntent);
         // Gets a PendingIntent containing the entire back stack
         PendingIntent mainPendingIntent =
-                PendingIntent.getActivity(this, 0, notifyIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                getActivity(this, 0, notifyIntent, FLAG_UPDATE_CURRENT);
 
         // 4. Set up RemoteInput, so users can input (keyboard and voice) from notification.
 
@@ -244,7 +253,7 @@ public class MessagingIntentService extends IntentService {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             Intent intent = new Intent(this, MessagingIntentService.class);
             intent.setAction(MessagingIntentService.ACTION_REPLY);
-            replyActionPendingIntent = PendingIntent.getService(this, 0, intent, 0);
+            replyActionPendingIntent = getService(this, 0, intent, FLAG_MUTABLE);
 
         } else {
             replyActionPendingIntent = mainPendingIntent;

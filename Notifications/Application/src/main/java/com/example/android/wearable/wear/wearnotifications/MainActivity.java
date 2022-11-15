@@ -15,6 +15,9 @@ limitations under the License.
  */
 package com.example.android.wearable.wear.wearnotifications;
 
+import static android.app.PendingIntent.*;
+import static android.app.PendingIntent.FLAG_IMMUTABLE;
+
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.Intent;
@@ -202,11 +205,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         // 1. Create/Retrieve Notification Channel for O and beyond devices (26+).
         String notificationChannelId =
-                NotificationUtil.createNotificationChannel(this, bigTextStyleReminderAppData);
+                NotificationUtil.INSTANCE.createNotificationChannel(this, bigTextStyleReminderAppData);
 
 
         // 2. Build the BIG_TEXT_STYLE.
-        BigTextStyle bigTextStyle = new NotificationCompat.BigTextStyle()
+        BigTextStyle bigTextStyle = new BigTextStyle()
                 // Overrides ContentText in the big form of the template.
                 .bigText(bigTextStyleReminderAppData.getBigText())
                 // Overrides ContentTitle in the big form of the template.
@@ -244,11 +247,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
 
         PendingIntent notifyPendingIntent =
-                PendingIntent.getActivity(
+                getActivity(
                         this,
                         0,
                         notifyIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT
+                        FLAG_UPDATE_CURRENT
                 );
 
 
@@ -259,9 +262,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         Intent snoozeIntent = new Intent(this, BigTextIntentService.class);
         snoozeIntent.setAction(BigTextIntentService.ACTION_SNOOZE);
 
-        PendingIntent snoozePendingIntent = PendingIntent.getService(this, 0, snoozeIntent, 0);
-        NotificationCompat.Action snoozeAction =
-                new NotificationCompat.Action.Builder(
+        PendingIntent snoozePendingIntent = getService(this, 0, snoozeIntent, FLAG_IMMUTABLE);
+        Action snoozeAction =
+                new Action.Builder(
                         R.drawable.ic_alarm_white_48dp,
                         "Snooze",
                         snoozePendingIntent)
@@ -272,9 +275,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         Intent dismissIntent = new Intent(this, BigTextIntentService.class);
         dismissIntent.setAction(BigTextIntentService.ACTION_DISMISS);
 
-        PendingIntent dismissPendingIntent = PendingIntent.getService(this, 0, dismissIntent, 0);
-        NotificationCompat.Action dismissAction =
-                new NotificationCompat.Action.Builder(
+        PendingIntent dismissPendingIntent = getService(this, 0, dismissIntent, FLAG_IMMUTABLE);
+        Action dismissAction =
+                new Action.Builder(
                         R.drawable.ic_cancel_white_48dp,
                         "Dismiss",
                         dismissPendingIntent)
@@ -295,7 +298,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         GlobalNotificationBuilder.setNotificationCompatBuilderInstance(notificationCompatBuilder);
 
-        Notification notification = notificationCompatBuilder
+        notificationCompatBuilder
                 // BIG_TEXT_STYLE sets title and content for API 16 (4.1 and after).
                 .setStyle(bigTextStyle)
                 // Title for API <16 (4.0 and below) devices.
@@ -318,8 +321,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 // .setGroupSummary(true)
                 // .setGroup(GROUP_KEY_YOUR_NAME_HERE)
 
-                .setCategory(Notification.CATEGORY_REMINDER)
-
                 // Sets priority for 25 and below. For 26 and above, 'priority' is deprecated for
                 // 'importance' which is set in the NotificationChannel. The integers representing
                 // 'priority' are different from 'importance', so make sure you don't mix them.
@@ -331,11 +332,21 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
                 // Adds additional actions specified above.
                 .addAction(snoozeAction)
-                .addAction(dismissAction)
+                .addAction(dismissAction);
 
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            notificationCompatBuilder.setCategory(Notification.CATEGORY_REMINDER);
+        }
+
+        Notification notification = notificationCompatBuilder
                 .build();
 
-        mNotificationManagerCompat.notify(NOTIFICATION_ID, notification);
+        try {
+            mNotificationManagerCompat.notify(NOTIFICATION_ID, notification);
+        } catch (SecurityException se) {
+            Log.e("MainActivity", "Unable to post notification", se);
+        }
     }
 
     /*
@@ -365,7 +376,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         // 1. Create/Retrieve Notification Channel for O and beyond devices (26+).
         String notificationChannelId =
-                NotificationUtil.createNotificationChannel(this, bigPictureStyleSocialAppData);
+                NotificationUtil.INSTANCE.createNotificationChannel(this, bigPictureStyleSocialAppData);
 
         // 2. Build the BIG_PICTURE_STYLE.
         BigPictureStyle bigPictureStyle = new NotificationCompat.BigPictureStyle()
@@ -409,11 +420,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         stackBuilder.addNextIntent(mainIntent);
         // Gets a PendingIntent containing the entire back stack.
         PendingIntent mainPendingIntent =
-                PendingIntent.getActivity(
+                getActivity(
                         this,
                         0,
                         mainIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT
+                        FLAG_UPDATE_CURRENT
                 );
 
         // 4. Set up RemoteInput, so users can input (keyboard and voice) from notification.
@@ -440,7 +451,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             Intent intent = new Intent(this, BigPictureSocialIntentService.class);
             intent.setAction(BigPictureSocialIntentService.ACTION_COMMENT);
-            replyActionPendingIntent = PendingIntent.getService(this, 0, intent, 0);
+            replyActionPendingIntent = getService(this, 0, intent, FLAG_MUTABLE);
 
         } else {
             replyActionPendingIntent = mainPendingIntent;
@@ -509,7 +520,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         Notification notification = notificationCompatBuilder.build();
 
-        mNotificationManagerCompat.notify(NOTIFICATION_ID, notification);
+        try {
+            mNotificationManagerCompat.notify(NOTIFICATION_ID, notification);
+        } catch (SecurityException se) {
+            Log.e("MainActivity", "Unable to post notification", se);
+        }
     }
 
     /*
@@ -579,11 +594,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         stackBuilder.addNextIntent(mainIntent);
         // Gets a PendingIntent containing the entire back stack.
         PendingIntent mainPendingIntent =
-                PendingIntent.getActivity(
+                getActivity(
                         this,
                         0,
                         mainIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT
+                        FLAG_UPDATE_CURRENT
                 );
 
         // 4. Build and issue the notification.
@@ -648,7 +663,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         Notification notification = notificationCompatBuilder.build();
 
-        mNotificationManagerCompat.notify(NOTIFICATION_ID, notification);
+        try {
+            mNotificationManagerCompat.notify(NOTIFICATION_ID, notification);
+        } catch (SecurityException se) {
+            Log.e("MainActivity", "Unable to post notification", se);
+        }
     }
 
     /*
@@ -735,11 +754,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         stackBuilder.addNextIntent(notifyIntent);
         // Gets a PendingIntent containing the entire back stack
         PendingIntent mainPendingIntent =
-                PendingIntent.getActivity(
+                getActivity(
                         this,
                         0,
                         notifyIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT
+                        FLAG_UPDATE_CURRENT
                 );
 
 
@@ -766,7 +785,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             Intent intent = new Intent(this, MessagingIntentService.class);
             intent.setAction(MessagingIntentService.ACTION_REPLY);
-            replyActionPendingIntent = PendingIntent.getService(this, 0, intent, 0);
+            replyActionPendingIntent = getService(this, 0, intent, FLAG_MUTABLE);
 
         } else {
             replyActionPendingIntent = mainPendingIntent;
@@ -843,7 +862,14 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         }
 
         Notification notification = notificationCompatBuilder.build();
-        mNotificationManagerCompat.notify(NOTIFICATION_ID, notification);
+
+        notification.
+
+        try {
+            mNotificationManagerCompat.notify(NOTIFICATION_ID, notification);
+        } catch (SecurityException se) {
+            Log.e("MainActivity", "Unable to post notification", se);
+        }
     }
 
     /**
