@@ -133,7 +133,6 @@ class BigTextIntentService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-
         // 4. Create additional Actions (Intents) for the Notification.
 
         // Snooze Action.

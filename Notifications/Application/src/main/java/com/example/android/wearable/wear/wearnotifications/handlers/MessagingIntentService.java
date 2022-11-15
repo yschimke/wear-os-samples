@@ -157,7 +157,7 @@ public class MessagingIntentService extends IntentService {
 
         // 1. Create/Retrieve Notification Channel for O and beyond devices (26+).
         String notificationChannelId =
-                NotificationUtil.createNotificationChannel(this, messagingStyleCommsAppData);
+                NotificationUtil.INSTANCE.createNotificationChannel(this, messagingStyleCommsAppData);
 
         // 2. Build the NotificationCompat.Style (MESSAGING_STYLE).
         String contentTitle = messagingStyleCommsAppData.getContentTitle();
