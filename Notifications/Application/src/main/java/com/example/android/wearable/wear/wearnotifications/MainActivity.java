@@ -201,7 +201,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         // 0. Get your data (everything unique per Notification).
         MockDatabase.BigTextStyleReminderAppData bigTextStyleReminderAppData =
-                MockDatabase.getBigTextStyleData();
+                MockDatabase.INSTANCE.getBigTextStyleData();
 
         // 1. Create/Retrieve Notification Channel for O and beyond devices (26+).
         String notificationChannelId =
@@ -251,7 +251,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                         this,
                         0,
                         notifyIntent,
-                        FLAG_UPDATE_CURRENT
+                        FLAG_UPDATE_CURRENT | FLAG_IMMUTABLE
                 );
 
 
@@ -372,7 +372,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         // 0. Get your data (everything unique per Notification).
         MockDatabase.BigPictureStyleSocialAppData bigPictureStyleSocialAppData =
-                MockDatabase.getBigPictureStyleData();
+                MockDatabase.INSTANCE.getBigPictureStyleData();
 
         // 1. Create/Retrieve Notification Channel for O and beyond devices (26+).
         String notificationChannelId =
@@ -424,7 +424,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                         this,
                         0,
                         mainIntent,
-                        FLAG_UPDATE_CURRENT
+                        FLAG_UPDATE_CURRENT | FLAG_IMMUTABLE
                 );
 
         // 4. Set up RemoteInput, so users can input (keyboard and voice) from notification.
@@ -546,7 +546,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         // 0. Get your data (everything unique per Notification).
         MockDatabase.InboxStyleEmailAppData inboxStyleEmailAppData =
-                MockDatabase.getInboxStyleData();
+                MockDatabase.INSTANCE.getInboxStyleData();
 
         // 1. Create/Retrieve Notification Channel for O and beyond devices (26+).
         String notificationChannelId =
@@ -598,7 +598,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                         this,
                         0,
                         mainIntent,
-                        FLAG_UPDATE_CURRENT
+                        FLAG_UPDATE_CURRENT | FLAG_IMMUTABLE
                 );
 
         // 4. Build and issue the notification.
@@ -758,7 +758,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                         this,
                         0,
                         notifyIntent,
-                        FLAG_UPDATE_CURRENT
+                        FLAG_UPDATE_CURRENT | FLAG_IMMUTABLE
                 );
 
 

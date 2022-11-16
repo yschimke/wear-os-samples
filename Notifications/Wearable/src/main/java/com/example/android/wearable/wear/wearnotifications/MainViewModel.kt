@@ -105,7 +105,7 @@ class MainViewModel(
         //      5. Build and issue the notification
 
         // 0. Get your data (everything unique per Notification).
-        val bigPictureStyleSocialAppData = MockDatabase.getBigPictureStyleData()
+        val bigPictureStyleSocialAppData = MockDatabase.bigPictureStyleData
 
         // 1. Build the BIG_PICTURE_STYLE.
         val bigPictureStyle =
@@ -230,7 +230,7 @@ class MainViewModel(
         //      4. Build and issue the notification
 
         // 0. Get your data (everything unique per Notification).
-        val inboxStyleEmailAppData = MockDatabase.getInboxStyleData()
+        val inboxStyleEmailAppData = MockDatabase.inboxStyleData
 
         // 1. Create/Retrieve Notification Channel for O and beyond devices (26+).
         val notificationChannelId =

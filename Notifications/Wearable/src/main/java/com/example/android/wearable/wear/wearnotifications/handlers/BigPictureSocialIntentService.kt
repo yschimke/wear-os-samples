@@ -127,7 +127,7 @@ class BigPictureSocialIntentService : Service() {
         //      5. Build and issue the notification
 
         // 0. Get your data (everything unique per Notification)
-        val bigPictureStyleSocialAppData = MockDatabase.getBigPictureStyleData()
+        val bigPictureStyleSocialAppData = MockDatabase.bigPictureStyleData
 
         // 1. Retrieve Notification Channel for O and beyond devices (26+). We don't need to create
         //    the NotificationChannel, since it was created the first time this Notification was

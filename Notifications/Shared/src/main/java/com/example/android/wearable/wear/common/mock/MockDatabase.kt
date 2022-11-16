@@ -13,501 +13,312 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.android.wearable.wear.common.mock;
+package com.example.android.wearable.wear.common.mock
 
-import android.app.NotificationManager;
-import android.content.ContentResolver;
-import android.content.Context;
-import android.net.Uri;
-import android.util.Log;
+import android.app.NotificationManager
+import android.content.ContentResolver
+import android.content.Context
+import android.net.Uri
+import android.os.Build
+import androidx.core.app.NotificationCompat
+import androidx.core.app.Person
+import androidx.core.graphics.drawable.IconCompat
+import com.example.android.wearable.wear.wearnotifications.common.R
 
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationCompat.MessagingStyle;
-import androidx.core.app.Person;
-import androidx.core.graphics.drawable.IconCompat;
+/** Mock data for each of the Notification Style Demos.  */
+object MockDatabase {
+    val bigTextStyleData: BigTextStyleReminderAppData by lazy { BigTextStyleReminderAppData() }
 
-import com.example.android.wearable.wear.wearnotifications.common.R;
+    val bigPictureStyleData: BigPictureStyleSocialAppData by lazy { BigPictureStyleSocialAppData() }
 
-import java.util.ArrayList;
+    val inboxStyleData: InboxStyleEmailAppData by lazy { InboxStyleEmailAppData() }
 
-/** Mock data for each of the Notification Style Demos. */
-public final class MockDatabase {
-
-    public static BigTextStyleReminderAppData getBigTextStyleData() {
-        return BigTextStyleReminderAppData.getInstance();
+    @JvmStatic
+    fun getMessagingStyleData(context: Context): MessagingStyleCommsAppData {
+        return MessagingStyleCommsAppData(context)
     }
 
-    public static BigPictureStyleSocialAppData getBigPictureStyleData() {
-        return BigPictureStyleSocialAppData.getInstance();
+    fun resourceToUri(context: Context, resId: Int): Uri {
+        return Uri.Builder()
+            .scheme(ContentResolver.SCHEME_ANDROID_RESOURCE)
+            .authority(context.packageName)
+            .path(resId.toString())
+            .build()
     }
 
-    public static InboxStyleEmailAppData getInboxStyleData() {
-        return InboxStyleEmailAppData.getInstance();
-    }
-
-    public static MessagingStyleCommsAppData getMessagingStyleData(Context context) {
-        return MessagingStyleCommsAppData.getInstance(context);
-    }
-
-    /** Represents data needed for BigTextStyle Notification. */
-    public static class BigTextStyleReminderAppData extends MockNotificationData {
-
-        private static BigTextStyleReminderAppData sInstance = null;
-
+    /** Represents data needed for BigTextStyle Notification.  */
+    class BigTextStyleReminderAppData() : MockNotificationData() {
         // Unique data for this Notification.Style:
-        private final String mBigContentTitle;
-        private final String mBigText;
-        private final String mSummaryText;
+        val bigContentTitle: String
+        val bigText: String
+        val summaryText: String
 
-        public static BigTextStyleReminderAppData getInstance() {
-            if (sInstance == null) {
-                sInstance = getSync();
-            }
-
-            return sInstance;
-        }
-
-        private static synchronized BigTextStyleReminderAppData getSync() {
-            if (sInstance == null) {
-                sInstance = new BigTextStyleReminderAppData();
-            }
-
-            return sInstance;
-        }
-
-        private BigTextStyleReminderAppData() {
+        init {
 
             // Standard Notification values:
             // Title for API <16 (4.0 and below) devices.
-            mContentTitle = "Don't forget to...";
+            contentTitle = "Don't forget to..."
             // Content for API <24 (4.0 and below) devices.
-            mContentText = "Feed Dogs and check garage!";
-            mPriority = NotificationCompat.PRIORITY_DEFAULT;
+            contentText = "Feed Dogs and check garage!"
+            priority = NotificationCompat.PRIORITY_DEFAULT
 
             // BigText Style Notification values:
-            mBigContentTitle = "Don't forget to...";
-            mBigText =
-                    "... feed the dogs before you leave for work, and check the garage to "
-                            + "make sure the door is closed.";
-            mSummaryText = "Dogs and Garage";
+            bigContentTitle = "Don't forget to..."
+            bigText = ("... feed the dogs before you leave for work, and check the garage to "
+                    + "make sure the door is closed.")
+            summaryText = "Dogs and Garage"
 
             // Notification channel values (for devices targeting 26 and above):
-            mChannelId = "channel_reminder_1";
+            channelId = "channel_reminder_1"
             // The user-visible name of the channel.
-            mChannelName = "Sample Reminder";
+            channelName = "Sample Reminder"
             // The user-visible description of the channel.
-            mChannelDescription = "Sample Reminder Notifications";
-            mChannelImportance = NotificationManager.IMPORTANCE_DEFAULT;
-            mChannelEnableVibrate = false;
-            mChannelLockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC;
+            channelDescription = "Sample Reminder Notifications"
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                channelImportance = NotificationManager.IMPORTANCE_DEFAULT
+            }
+            isChannelEnableVibrate = false
+            channelLockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
         }
 
-        public String getBigContentTitle() {
-            return mBigContentTitle;
-        }
-
-        public String getBigText() {
-            return mBigText;
-        }
-
-        public String getSummaryText() {
-            return mSummaryText;
-        }
-
-        @Override
-        public String toString() {
-            return getBigContentTitle() + getBigText();
+        override fun toString(): String {
+            return bigContentTitle + bigText
         }
     }
 
-    /** Represents data needed for BigPictureStyle Notification. */
-    public static class BigPictureStyleSocialAppData extends MockNotificationData {
-
-        private static BigPictureStyleSocialAppData sInstance = null;
-
+    /** Represents data needed for BigPictureStyle Notification.  */
+    class BigPictureStyleSocialAppData() : MockNotificationData() {
         // Unique data for this Notification.Style:
-        private final int mBigImage;
-        private final String mBigContentTitle;
-        private final String mSummaryText;
+        val bigImage: Int
+        val bigContentTitle: String
+        val summaryText: String
+        val possiblePostResponses: Array<CharSequence>
+        val participants: ArrayList<String>
 
-        private final CharSequence[] mPossiblePostResponses;
-
-        private final ArrayList<String> mParticipants;
-
-        public static BigPictureStyleSocialAppData getInstance() {
-            if (sInstance == null) {
-                sInstance = getSync();
-            }
-            return sInstance;
-        }
-
-        private static synchronized BigPictureStyleSocialAppData getSync() {
-            if (sInstance == null) {
-                sInstance = new BigPictureStyleSocialAppData();
-            }
-
-            return sInstance;
-        }
-
-        private BigPictureStyleSocialAppData() {
+        init {
             // Standard Notification values:
             // Title/Content for API <16 (4.0 and below) devices.
-            mContentTitle = "Bob's Post";
-            mContentText = "[Picture] Like my shot of Earth?";
-            mPriority = NotificationCompat.PRIORITY_HIGH;
+            contentTitle = "Bob's Post"
+            contentText = "[Picture] Like my shot of Earth?"
+            priority = NotificationCompat.PRIORITY_HIGH
 
             // Style notification values:
-            mBigImage = R.drawable.earth;
-            mBigContentTitle = "Bob's Post";
-            mSummaryText = "Like my shot of Earth?";
+            bigImage = R.drawable.earth
+            bigContentTitle = "Bob's Post"
+            summaryText = "Like my shot of Earth?"
 
             // This would be possible responses based on the contents of the post.
-            mPossiblePostResponses = new CharSequence[] {"Yes", "No", "Maybe?"};
-
-            mParticipants = new ArrayList<>();
-            mParticipants.add("Bob Smith");
+            possiblePostResponses = arrayOf("Yes", "No", "Maybe?")
+            participants = ArrayList()
+            participants.add("Bob Smith")
 
             // Notification channel values (for devices targeting 26 and above):
-            mChannelId = "channel_social_1";
+            channelId = "channel_social_1"
             // The user-visible name of the channel.
-            mChannelName = "Sample Social";
+            channelName = "Sample Social"
             // The user-visible description of the channel.
-            mChannelDescription = "Sample Social Notifications";
-            mChannelImportance = NotificationManager.IMPORTANCE_HIGH;
-            mChannelEnableVibrate = true;
-            mChannelLockscreenVisibility = NotificationCompat.VISIBILITY_PRIVATE;
+            channelDescription = "Sample Social Notifications"
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                channelImportance = NotificationManager.IMPORTANCE_HIGH
+            }
+            isChannelEnableVibrate = true
+            channelLockscreenVisibility = NotificationCompat.VISIBILITY_PRIVATE
         }
 
-        public int getBigImage() {
-            return mBigImage;
-        }
-
-        public String getBigContentTitle() {
-            return mBigContentTitle;
-        }
-
-        public String getSummaryText() {
-            return mSummaryText;
-        }
-
-        public CharSequence[] getPossiblePostResponses() {
-            return mPossiblePostResponses;
-        }
-
-        public ArrayList<String> getParticipants() {
-            return mParticipants;
-        }
-
-        @Override
-        public String toString() {
-            return getContentTitle() + " - " + getContentText();
+        override fun toString(): String {
+            return "$contentTitle - $contentText"
         }
     }
 
-    /** Represents data needed for InboxStyle Notification. */
-    public static class InboxStyleEmailAppData extends MockNotificationData {
-
-        private static InboxStyleEmailAppData sInstance = null;
-
+    /** Represents data needed for InboxStyle Notification.  */
+    class InboxStyleEmailAppData() : MockNotificationData() {
         // Unique data for this Notification.Style:
-        private final int mNumberOfNewEmails;
-        private final String mBigContentTitle;
-        private final String mSummaryText;
-        private final ArrayList<String> mIndividualEmailSummary;
+        val numberOfNewEmails: Int
+        val bigContentTitle: String
+        val summaryText: String
+        val individualEmailSummary: ArrayList<String>
+        val participants: ArrayList<String>
 
-        private final ArrayList<String> mParticipants;
-
-        public static InboxStyleEmailAppData getInstance() {
-            if (sInstance == null) {
-                sInstance = getSync();
-            }
-            return sInstance;
-        }
-
-        private static synchronized InboxStyleEmailAppData getSync() {
-            if (sInstance == null) {
-                sInstance = new InboxStyleEmailAppData();
-            }
-
-            return sInstance;
-        }
-
-        private InboxStyleEmailAppData() {
+        init {
             // Standard Notification values:
             // Title/Content for API <16 (4.0 and below) devices.
-            mContentTitle = "5 new emails";
-            mContentText = "from Jane, Jay, Alex +2 more";
-            mNumberOfNewEmails = 5;
-            mPriority = NotificationCompat.PRIORITY_DEFAULT;
+            contentTitle = "5 new emails"
+            contentText = "from Jane, Jay, Alex +2 more"
+            numberOfNewEmails = 5
+            priority = NotificationCompat.PRIORITY_DEFAULT
 
             // Style notification values:
-            mBigContentTitle = "5 new emails from Jane, Jay, Alex +2";
-            mSummaryText = "New emails";
+            bigContentTitle = "5 new emails from Jane, Jay, Alex +2"
+            summaryText = "New emails"
 
             // Add each summary line of the new emails, you can add up to 5.
-            mIndividualEmailSummary = new ArrayList<>();
-            mIndividualEmailSummary.add("Jane Faab  -   Launch Party is here...");
-            mIndividualEmailSummary.add("Jay Walker -   There's a turtle on the server!");
-            mIndividualEmailSummary.add("Alex Chang -   Check this out...");
-            mIndividualEmailSummary.add("Jane Johns -   Check in code?");
-            mIndividualEmailSummary.add("John Smith -   Movies later....");
+            individualEmailSummary = ArrayList()
+            individualEmailSummary.add("Jane Faab  -   Launch Party is here...")
+            individualEmailSummary.add("Jay Walker -   There's a turtle on the server!")
+            individualEmailSummary.add("Alex Chang -   Check this out...")
+            individualEmailSummary.add("Jane Johns -   Check in code?")
+            individualEmailSummary.add("John Smith -   Movies later....")
 
             // If the phone is in "Do not disturb mode, the user will still be notified if
             // the user(s) is starred as a favorite.
-            mParticipants = new ArrayList<>();
-            mParticipants.add("Jane Faab");
-            mParticipants.add("Jay Walker");
-            mParticipants.add("Alex Chang");
-            mParticipants.add("Jane Johns");
-            mParticipants.add("John Smith");
+            participants = ArrayList()
+            participants.add("Jane Faab")
+            participants.add("Jay Walker")
+            participants.add("Alex Chang")
+            participants.add("Jane Johns")
+            participants.add("John Smith")
 
             // Notification channel values (for devices targeting 26 and above):
-            mChannelId = "channel_email_1";
+            channelId = "channel_email_1"
             // The user-visible name of the channel.
-            mChannelName = "Sample Email";
+            channelName = "Sample Email"
             // The user-visible description of the channel.
-            mChannelDescription = "Sample Email Notifications";
-            mChannelImportance = NotificationManager.IMPORTANCE_DEFAULT;
-            mChannelEnableVibrate = true;
-            mChannelLockscreenVisibility = NotificationCompat.VISIBILITY_PRIVATE;
+            channelDescription = "Sample Email Notifications"
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                channelImportance = NotificationManager.IMPORTANCE_DEFAULT
+            }
+            isChannelEnableVibrate = true
+            channelLockscreenVisibility = NotificationCompat.VISIBILITY_PRIVATE
         }
 
-        public int getNumberOfNewEmails() {
-            return mNumberOfNewEmails;
-        }
-
-        public String getBigContentTitle() {
-            return mBigContentTitle;
-        }
-
-        public String getSummaryText() {
-            return mSummaryText;
-        }
-
-        public ArrayList<String> getIndividualEmailSummary() {
-            return mIndividualEmailSummary;
-        }
-
-        public ArrayList<String> getParticipants() {
-            return mParticipants;
-        }
-
-        @Override
-        public String toString() {
-            return getContentTitle() + " " + getContentText();
+        override fun toString(): String {
+            return "$contentTitle $contentText"
         }
     }
 
-    /** Represents data needed for MessagingStyle Notification. */
-    public static class MessagingStyleCommsAppData extends MockNotificationData {
-
-        private static MessagingStyleCommsAppData sInstance = null;
-
+    /** Represents data needed for MessagingStyle Notification.  */
+    class MessagingStyleCommsAppData(context: Context) :
+        MockNotificationData() {
         // Unique data for this Notification.Style:
-        private final ArrayList<MessagingStyle.Message> mMessages;
+        val messages: ArrayList<NotificationCompat.MessagingStyle.Message>
+
         // String of all mMessages.
-        private final String mFullConversation;
+        val fullConversation: String
+
         // Name preferred when replying to chat.
-        private final Person mMe;
-        private final ArrayList<Person> mParticipants;
+        val me: Person
+        val participants: ArrayList<Person>
+        val replyChoicesBasedOnLastMessage: Array<CharSequence>
 
-        private final CharSequence[] mReplyChoicesBasedOnLastMessages;
-
-        public static MessagingStyleCommsAppData getInstance(Context context) {
-            if (sInstance == null) {
-                sInstance = getSync(context);
-            }
-            return sInstance;
-        }
-
-        private static synchronized MessagingStyleCommsAppData getSync(Context context) {
-            if (sInstance == null) {
-                sInstance = new MessagingStyleCommsAppData(context);
-            }
-
-            return sInstance;
-        }
-
-        private MessagingStyleCommsAppData(Context context) {
+        init {
             // Standard notification values:
             // Content for API <24 (M and below) devices.
             // Note: I am actually hardcoding these Strings based on info below. You would be
             // pulling these values from the same source in your database. I leave this up here, so
             // you can see the standard parts of a Notification first.
-            mContentTitle = "3 Messages w/ Famous, Wendy";
-            mContentText = "HEY, I see my house! :)";
-            mPriority = NotificationCompat.PRIORITY_HIGH;
+            contentTitle = "3 Messages w/ Famous, Wendy"
+            contentText = "HEY, I see my house! :)"
+            priority = NotificationCompat.PRIORITY_HIGH
 
             // Create the users for the conversation.
             // Name preferred when replying to chat.
-            mMe =
-                    new Person.Builder()
-                            .setName("Me MacDonald")
-                            .setKey("1234567890")
-                            .setUri("tel:1234567890")
-                            .setIcon(
-                                    IconCompat.createWithResource(context, R.drawable.me_macdonald))
-                            .build();
-
-            Person participant1 =
-                    new Person.Builder()
-                            .setName("Famous Frank")
-                            .setKey("9876543210")
-                            .setUri("tel:9876543210")
-                            .setIcon(
-                                    IconCompat.createWithResource(context, R.drawable.famous_fryer))
-                            .build();
-
-            Person participant2 =
-                    new Person.Builder()
-                            .setName("Wendy Weather")
-                            .setKey("2233221122")
-                            .setUri("tel:2233221122")
-                            .setIcon(IconCompat.createWithResource(context, R.drawable.wendy_wonda))
-                            .build();
+            me = Person.Builder()
+                .setName("Me MacDonald")
+                .setKey("1234567890")
+                .setUri("tel:1234567890")
+                .setIcon(
+                    IconCompat.createWithResource(context, R.drawable.me_macdonald)
+                )
+                .build()
+            val participant1 = Person.Builder()
+                .setName("Famous Frank")
+                .setKey("9876543210")
+                .setUri("tel:9876543210")
+                .setIcon(
+                    IconCompat.createWithResource(context, R.drawable.famous_fryer)
+                )
+                .build()
+            val participant2 = Person.Builder()
+                .setName("Wendy Weather")
+                .setKey("2233221122")
+                .setUri("tel:2233221122")
+                .setIcon(IconCompat.createWithResource(context, R.drawable.wendy_wonda))
+                .build()
 
             // If the phone is in "Do not disturb mode, the user will still be notified if
             // the user(s) is starred as a favorite.
             // Note: You don't need to add yourself, aka 'me', as a participant.
-            mParticipants = new ArrayList<>();
-            mParticipants.add(participant1);
-            mParticipants.add(participant2);
-
-            mMessages = new ArrayList<>();
+            participants = ArrayList()
+            participants.add(participant1)
+            participants.add(participant2)
+            messages = ArrayList()
 
             // For each message, you need the timestamp. In this case, we are using arbitrary longs
             // representing time in milliseconds.
-            mMessages.add(
-                    // When you are setting an image for a message, text does not display.
-                    new MessagingStyle.Message("", 1528490641998L, participant1)
-                            .setData("image/png", resourceToUri(context, R.drawable.earth)));
-
-            mMessages.add(
-                    new MessagingStyle.Message(
-                            "Visiting the moon again? :P", 1528490643998L, mMe));
-
-            mMessages.add(
-                    new MessagingStyle.Message("HEY, I see my house!", 1528490645998L, participant2));
+            messages.add( // When you are setting an image for a message, text does not display.
+                NotificationCompat.MessagingStyle.Message("", 1528490641998L, participant1)
+                    .setData("image/png", resourceToUri(context, R.drawable.earth))
+            )
+            messages.add(
+                NotificationCompat.MessagingStyle.Message(
+                    "Visiting the moon again? :P", 1528490643998L, me
+                )
+            )
+            messages.add(
+                NotificationCompat.MessagingStyle.Message(
+                    "HEY, I see my house!",
+                    1528490645998L,
+                    participant2
+                )
+            )
 
             // String version of the mMessages above.
-            mFullConversation =
-                    "Famous: [Picture of Moon]\n\n"
-                            + "Me: Visiting the moon again? :P\n\n"
-                            + "Wendy: HEY, I see my house! :)\n\n";
+            fullConversation = """
+                 Famous: [Picture of Moon]
+                 
+                 Me: Visiting the moon again? :P
+                 
+                 Wendy: HEY, I see my house! :)
+                 
+                 
+                 """.trimIndent()
 
             // Responses based on the last messages of the conversation. You would use
             // Machine Learning to get these (https://developers.google.com/ml-kit/).
-            mReplyChoicesBasedOnLastMessages =
-                    new CharSequence[] {"Me too!", "How's the weather?", "You have good eyesight."};
+            replyChoicesBasedOnLastMessage =
+                arrayOf("Me too!", "How's the weather?", "You have good eyesight.")
 
             // Notification channel values (for devices targeting 26 and above):
-            mChannelId = "channel_messaging_1";
+            channelId = "channel_messaging_1"
             // The user-visible name of the channel.
-            mChannelName = "Sample Messaging";
+            channelName = "Sample Messaging"
             // The user-visible description of the channel.
-            mChannelDescription = "Sample Messaging Notifications";
-            mChannelImportance = NotificationManager.IMPORTANCE_MAX;
-            mChannelEnableVibrate = true;
-            mChannelLockscreenVisibility = NotificationCompat.VISIBILITY_PRIVATE;
+            channelDescription = "Sample Messaging Notifications"
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                channelImportance = NotificationManager.IMPORTANCE_MAX
+            }
+            isChannelEnableVibrate = true
+            channelLockscreenVisibility = NotificationCompat.VISIBILITY_PRIVATE
         }
 
-        public ArrayList<MessagingStyle.Message> getMessages() {
-            return mMessages;
+        val numberOfNewMessages: Int
+            get() = messages.size
+
+        override fun toString(): String {
+            return fullConversation
         }
 
-        public String getFullConversation() {
-            return mFullConversation;
-        }
-
-        public Person getMe() {
-            return mMe;
-        }
-
-        public int getNumberOfNewMessages() {
-            return mMessages.size();
-        }
-
-        public ArrayList<Person> getParticipants() {
-            return mParticipants;
-        }
-
-        public CharSequence[] getReplyChoicesBasedOnLastMessage() {
-            return mReplyChoicesBasedOnLastMessages;
-        }
-
-        @Override
-        public String toString() {
-            return getFullConversation();
-        }
-
-        public boolean isGroupConversation() {
-            return mParticipants.size() > 1;
-        }
+        val isGroupConversation: Boolean
+            get() = participants.size > 1
     }
 
-    /** Represents standard data needed for a Notification. */
-    public abstract static class MockNotificationData {
-
-        // Standard notification values:
-        protected String mContentTitle;
-        protected String mContentText;
-        protected int mPriority;
-
-        // Notification channel values (O and above):
-        protected String mChannelId;
-        protected CharSequence mChannelName;
-        protected String mChannelDescription;
-        protected int mChannelImportance;
-        protected boolean mChannelEnableVibrate;
-        protected int mChannelLockscreenVisibility;
-
+    /** Represents standard data needed for a Notification.  */
+    abstract class MockNotificationData {
         // Notification Standard notification get methods:
-        public String getContentTitle() {
-            return mContentTitle;
-        }
-
-        public String getContentText() {
-            return mContentText;
-        }
-
-        public int getPriority() {
-            return mPriority;
-        }
+        // Standard notification values:
+        var contentTitle: String? = null
+        var contentText: String? = null
+        var priority = 0
 
         // Channel values (O and above) get methods:
-        public String getChannelId() {
-            return mChannelId;
-        }
+        // Notification channel values (O and above):
+        lateinit var channelId: String
+        lateinit var channelName: CharSequence
+        lateinit var channelDescription: String
+        var channelImportance = 0
+        var isChannelEnableVibrate = false
 
-        public CharSequence getChannelName() {
-            return mChannelName;
-        }
-
-        public String getChannelDescription() {
-            return mChannelDescription;
-        }
-
-        public int getChannelImportance() {
-            return mChannelImportance;
-        }
-
-        public boolean isChannelEnableVibrate() {
-            return mChannelEnableVibrate;
-        }
-
-        public @NotificationCompat.NotificationVisibility int getChannelLockscreenVisibility() {
-            return mChannelLockscreenVisibility;
-        }
-    }
-
-    public static Uri resourceToUri(Context context, int resId) {
-        return Uri.parse(
-                ContentResolver.SCHEME_ANDROID_RESOURCE
-                        + "://"
-                        + context.getResources().getResourcePackageName(resId)
-                        + "/"
-                        + context.getResources().getResourceTypeName(resId)
-                        + "/"
-                        + context.getResources().getResourceEntryName(resId));
+        @get:NotificationCompat.NotificationVisibility
+        var channelLockscreenVisibility = 0
     }
 }

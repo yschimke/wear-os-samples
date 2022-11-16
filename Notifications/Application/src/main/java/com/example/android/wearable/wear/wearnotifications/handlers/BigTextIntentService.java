@@ -133,7 +133,7 @@ public class BigTextIntentService extends IntentService {
 
         // 0. Get your data (everything unique per Notification).
         MockDatabase.BigTextStyleReminderAppData bigTextStyleReminderAppData =
-                MockDatabase.getBigTextStyleData();
+                MockDatabase.INSTANCE.getBigTextStyleData();
 
         // 1. Retrieve Notification Channel for O and beyond devices (26+). We don't need to create
         //    the NotificationChannel, since it was created the first time this Notification was

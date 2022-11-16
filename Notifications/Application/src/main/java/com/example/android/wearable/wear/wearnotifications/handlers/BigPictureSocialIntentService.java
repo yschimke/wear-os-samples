@@ -143,7 +143,7 @@ public class BigPictureSocialIntentService extends IntentService {
 
         // 0. Get your data (everything unique per Notification)
         MockDatabase.BigPictureStyleSocialAppData bigPictureStyleSocialAppData =
-                MockDatabase.getBigPictureStyleData();
+                MockDatabase.INSTANCE.getBigPictureStyleData();
 
         // 1. Build the BIG_PICTURE_STYLE
         BigPictureStyle bigPictureStyle = new NotificationCompat.BigPictureStyle()

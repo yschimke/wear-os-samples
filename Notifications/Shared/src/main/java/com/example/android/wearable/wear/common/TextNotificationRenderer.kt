@@ -17,7 +17,7 @@ class TextNotificationRenderer(
     intentBuilder: IntentBuilder
 ) : NotificationRenderer<TextNotification>(context, intentBuilder) {
     override fun createNotificationChannel() {
-        val bigTextStyleReminderAppData = MockDatabase.getBigTextStyleData()
+        val bigTextStyleReminderAppData = MockDatabase.bigTextStyleData
 
         createNotificationChannel(bigTextStyleReminderAppData)
     }
@@ -124,7 +124,7 @@ class TextNotificationRenderer(
     }
 
     private fun pair(): Pair<MockDatabase.BigTextStyleReminderAppData, String> {
-        val bigTextStyleReminderAppData = MockDatabase.getBigTextStyleData()
+        val bigTextStyleReminderAppData = MockDatabase.bigTextStyleData
 
         // 1. Create/Retrieve Notification Channel for O and beyond devices (26+).
         val notificationChannelId =
