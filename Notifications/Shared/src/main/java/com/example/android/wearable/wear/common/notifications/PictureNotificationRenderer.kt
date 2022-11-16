@@ -12,6 +12,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.RemoteInput
 import androidx.core.content.ContextCompat
+import com.example.android.wearable.wear.common.handlers.NotificationReplyService
 import com.example.android.wearable.wear.common.navigation.IntentBuilder
 import com.example.android.wearable.wear.wearnotifications.common.R
 import com.example.android.wearable.wear.wearnotifications.proto.NotificationsProto.PictureNotification
@@ -84,7 +85,7 @@ class PictureNotificationRenderer(
                     )
                 )
                     .addRemoteInput(
-                        RemoteInput.Builder(NotificationReplyService.EXTRA_COMMENT)
+                        RemoteInput.Builder(NotificationReplyService.EXTRA_REPLY)
                             .setLabel(context.getString(R.string.reply_label))
                             // List of quick response choices for any wearables paired with the phone.
                             .setChoices(notificationData.postRepliesList.toTypedArray())

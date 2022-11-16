@@ -8,4 +8,6 @@ interface IntentBuilder {
     fun inboxScreenIntent(id: Int): Intent
     fun pictureScreenIntent(id: Int): Intent
     fun pictureReplyIntent(id: Int): Intent
+    fun messagingScreenIntent(id: Int): Intent
+    fun messagingReplyIntent(id: Int): Intent
 }

@@ -21,4 +21,6 @@
     <string name="picture_channel_name">Sample Social</string>
     <string name="picture_channel_description">Sample Social Notifications</string>
     <string name="reply_label">Reply</string>
+    <string name="messaging_channel_name">Messaging</string>
+    <string name="messaging_channel_description">Messaging Channel</string>
 </resources>

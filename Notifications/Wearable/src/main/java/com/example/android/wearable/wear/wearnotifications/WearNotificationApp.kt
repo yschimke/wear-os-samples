@@ -8,11 +8,11 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import androidx.wear.compose.material.ScalingLazyListState
-import com.example.android.wearable.wear.wearnotifications.handlers.BigPictureMainScreen
-import com.example.android.wearable.wear.wearnotifications.handlers.BigTextMainScreen
-import com.example.android.wearable.wear.wearnotifications.handlers.InboxMainScreen
-import com.example.android.wearable.wear.wearnotifications.handlers.MessagingMainScreen
 import com.example.android.wearable.wear.wearnotifications.main.WearMainScreen
+import com.example.android.wearable.wear.wearnotifications.screens.BigPictureMainScreen
+import com.example.android.wearable.wear.wearnotifications.screens.BigTextMainScreen
+import com.example.android.wearable.wear.wearnotifications.screens.InboxMainScreen
+import com.example.android.wearable.wear.wearnotifications.screens.MessagingMainScreen
 import com.google.android.horologist.compose.navscaffold.WearNavScaffold
 import com.google.android.horologist.compose.navscaffold.scalingLazyColumnComposable
 import com.google.android.horologist.compose.navscaffold.wearNavComposable

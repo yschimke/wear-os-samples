@@ -23,6 +23,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
 import androidx.core.graphics.drawable.IconCompat
+import com.example.android.wearable.wear.common.domain.resourceToUri
 import com.example.android.wearable.wear.wearnotifications.common.R
 
 /** Mock data for each of the Notification Style Demos.  */
@@ -36,14 +37,6 @@ object MockDatabase {
     @JvmStatic
     fun getMessagingStyleData(context: Context): MessagingStyleCommsAppData {
         return MessagingStyleCommsAppData(context)
-    }
-
-    fun resourceToUri(context: Context, resId: Int): Uri {
-        return Uri.Builder()
-            .scheme(ContentResolver.SCHEME_ANDROID_RESOURCE)
-            .authority(context.packageName)
-            .path(resId.toString())
-            .build()
     }
 
     /** Represents data needed for BigTextStyle Notification.  */

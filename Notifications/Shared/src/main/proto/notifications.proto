@@ -29,11 +29,26 @@ message TextNotification {
 
 message Contact {
   string name = 1;
+  optional string key = 2;
+  optional string uri = 3;
+  optional int32 icon = 4;
 }
 
 message Email {
   string summary = 1;
   repeated Contact participant = 2;
+}
+
+message Image {
+  string uri = 1;
+  string mimetype = 2;
+}
+
+message Message {
+  string text = 1;
+  Contact sender = 2;
+  int64 timestamp = 3;
+  optional Image image = 4;
 }
 
 message InboxNotification {
@@ -52,12 +67,22 @@ message PictureNotification {
   repeated Contact participant = 6;
 }
 
+message MessagingNotification {
+  string title = 1;
+  string body = 2;
+  repeated Message message = 3;
+  repeated string postReplies = 4;
+  bool isGroupConversation = 5;
+  Contact me = 6;
+}
+
 message PostedNotification {
   int32 id = 1;
   oneof notification_content {
     TextNotification text = 2;
     InboxNotification inbox = 3;
     PictureNotification picture = 4;
+    MessagingNotification messaging = 5;
   }
 }
 

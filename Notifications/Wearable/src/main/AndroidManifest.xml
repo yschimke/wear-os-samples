@@ -70,15 +70,15 @@
         </activity>
 
         <service
-            android:name="com.example.android.wearable.wear.common.notifications.CoreNotificationActionsService"
+            android:name="com.example.android.wearable.wear.common.handlers.CoreNotificationActionsService"
             android:exported="false"></service>
 
         <service
-            android:name=".handlers.MessagingIntentService"
+            android:name="com.example.android.wearable.wear.common.handlers.MessagingIntentService"
             android:exported="false"></service>
 
         <service
-            android:name=".handlers.BigPictureSocialIntentService"
+            android:name="com.example.android.wearable.wear.common.handlers.BigPictureSocialIntentService"
             android:exported="false"></service>
     </application>
 </manifest>

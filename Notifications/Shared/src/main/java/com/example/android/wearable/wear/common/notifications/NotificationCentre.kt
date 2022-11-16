@@ -7,7 +7,9 @@ import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import androidx.datastore.core.DataStore
 import com.example.android.wearable.wear.common.navigation.IntentBuilder
+import com.example.android.wearable.wear.wearnotifications.proto.MessagingNotificationKt
 import com.example.android.wearable.wear.wearnotifications.proto.NotificationsProto.InboxNotification
+import com.example.android.wearable.wear.wearnotifications.proto.NotificationsProto.MessagingNotification
 import com.example.android.wearable.wear.wearnotifications.proto.NotificationsProto.PictureNotification
 import com.example.android.wearable.wear.wearnotifications.proto.NotificationsProto.PostedNotifications
 import com.example.android.wearable.wear.wearnotifications.proto.NotificationsProto.TextNotification
@@ -28,6 +30,8 @@ class NotificationCentre(
         InboxNotificationRenderer(context, intentBuilder, notificationManager)
     val pictureNotificationRenderer =
         PictureNotificationRenderer(context, intentBuilder, notificationManager)
+    val messagingNotificationRenderer =
+        MessagingNotificationRenderer(context, intentBuilder, notificationManager)
 
     fun createChannels() {
         // NotificationChannels are required for Notifications on O (API 26) and above.
@@ -43,6 +47,9 @@ class NotificationCentre(
 
             val pictureChannel = pictureNotificationRenderer.buildNotificationChannel()
             notificationManager.createNotificationChannel(pictureChannel)
+
+            val messagingChannel = messagingNotificationRenderer.buildNotificationChannel()
+            notificationManager.createNotificationChannel(messagingChannel)
         }
     }
 
@@ -62,6 +69,12 @@ class NotificationCentre(
         return postNotification({
             this.picture = pictureNotification
         }, pictureNotificationRenderer, pictureNotification)
+    }
+
+    suspend fun postMessagingNotification(messagingNotification: MessagingNotification): Int {
+        return postNotification({
+            this.messaging = messagingNotification
+        }, messagingNotificationRenderer, messagingNotification)
     }
 
     suspend fun <T> postNotification(
@@ -105,6 +118,32 @@ class NotificationCentre(
                 postedNotifications.copy {
                     notification[existingNotification] = postedNotification.copy {
                         picture = updatedPictureNotification
+                    }
+                }
+            } else {
+                Log.e("NotificationCentre", "Unable to update notification")
+
+                postedNotifications
+            }
+        }
+    }
+
+    suspend fun updateMessagingNotification(id: Int, update: MessagingNotificationKt.Dsl.() -> Unit) {
+        postedNotificationsDataStore.updateData { postedNotifications ->
+            val existingNotification = postedNotifications.notificationList.indexOfFirst {
+                it.id == id && it.hasMessaging()
+            }
+
+            if (existingNotification > -1) {
+                val postedNotification = postedNotifications.getNotification(existingNotification)
+                val updatedMessagingNotification = postedNotification.messaging.copy(update)
+
+                val newNotification = messagingNotificationRenderer.buildNotification(id, updatedMessagingNotification)
+                postNotification(id, newNotification)
+
+                postedNotifications.copy {
+                    notification[existingNotification] = postedNotification.copy {
+                        messaging = updatedMessagingNotification
                     }
                 }
             } else {

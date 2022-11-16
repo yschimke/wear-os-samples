@@ -13,22 +13,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
  */
-package com.example.android.wearable.wear.common.notifications
+package com.example.android.wearable.wear.common.handlers
 
-import android.annotation.SuppressLint
-import android.app.Notification
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
+import androidx.core.app.RemoteInput
 import com.example.android.wearable.wear.common.components.SampleNotificationApplication
+import com.example.android.wearable.wear.common.notifications.NotificationCentre
 import kotlinx.coroutines.runBlocking
 
 /**
  * Asynchronously handles snooze and dismiss actions for reminder app (and active Notification).
  * Notification for for reminder app uses BigTextStyle.
  */
-class CoreNotificationActionsService : Service() {
-    private lateinit var notificationCentre: NotificationCentre
+abstract class NotificationReplyService : Service() {
+    lateinit var notificationCentre: NotificationCentre
 
     override fun onCreate() {
         super.onCreate()
@@ -38,27 +38,34 @@ class CoreNotificationActionsService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
-            ACTION_DISMISS -> handleActionDismiss(intent)
+            ACTION_REPLY -> handleActionComment(intent)
         }
         return START_REDELIVER_INTENT
     }
 
+    private fun getComment(intent: Intent): String {
+        val remoteInput = RemoteInput.getResultsFromIntent(intent)
+        return remoteInput?.getString(EXTRA_REPLY) ?: "Missing"
+    }
+
     override fun onBind(intent: Intent?): IBinder? = null
 
-    /**
-     * Handles action Dismiss in the provided background thread.
-     */
-    private fun handleActionDismiss(intent: Intent) {
+    fun handleActionComment(intent: Intent) {
         runBlocking {
-            notificationCentre.clearNotification(intent.getIntExtra(EXTRA_NOTIFICATION_ID, -1))
+            handleActionComment(
+                intent.getIntExtra(CoreNotificationActionsService.EXTRA_NOTIFICATION_ID, -1),
+                getComment(intent)
+            )
         }
     }
 
-    companion object {
-        const val ACTION_DISMISS =
-            "com.example.android.wearable.wear.wearnotifications.handlers.action.DISMISS"
+    abstract suspend fun handleActionComment(id: Int, comment: String)
 
-        @SuppressLint("InlinedApi")
-        const val EXTRA_NOTIFICATION_ID = Notification.EXTRA_NOTIFICATION_ID
+    companion object {
+        const val ACTION_REPLY =
+            "com.example.android.wearable.wear.wearnotifications.handlers.action.REPLY"
+
+        const val EXTRA_REPLY =
+            "com.example.android.wearable.wear.wearnotifications.handlers.extra.REPLY"
     }
 }

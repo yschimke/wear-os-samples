@@ -2,27 +2,18 @@ package com.example.android.wearable.wear.wearnotifications.main
 
 import android.app.Activity
 import android.app.Application
-import android.app.Notification
-import android.app.PendingIntent
-import android.content.Intent
-import android.graphics.BitmapFactory
-import android.util.Log
-import androidx.core.app.NotificationCompat
-import androidx.core.app.RemoteInput
-import androidx.core.content.ContextCompat
-import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.android.wearable.wear.common.mock.MockDatabase
-import com.example.android.wearable.wear.common.util.NotificationUtil
-import com.example.android.wearable.wear.wearnotifications.DeepLinkPrefix
-import com.example.android.wearable.wear.wearnotifications.R
+import com.example.android.wearable.wear.common.domain.Me
+import com.example.android.wearable.wear.common.domain.resourceToUri
 import com.example.android.wearable.wear.wearnotifications.WearNotificationApplication
-import com.example.android.wearable.wear.wearnotifications.handlers.BigPictureSocialIntentService
-import com.example.android.wearable.wear.wearnotifications.handlers.MessagingIntentService
+import com.example.android.wearable.wear.wearnotifications.common.R
 import com.example.android.wearable.wear.wearnotifications.proto.contact
 import com.example.android.wearable.wear.wearnotifications.proto.email
+import com.example.android.wearable.wear.wearnotifications.proto.image
 import com.example.android.wearable.wear.wearnotifications.proto.inboxNotification
+import com.example.android.wearable.wear.wearnotifications.proto.message
+import com.example.android.wearable.wear.wearnotifications.proto.messagingNotification
 import com.example.android.wearable.wear.wearnotifications.proto.pictureNotification
 import com.example.android.wearable.wear.wearnotifications.proto.textNotification
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -56,35 +47,6 @@ class MainViewModel(
         }
     }
 
-    private fun postNotification(id: Int, notification: Notification) {
-        try {
-            mNotificationManagerCompat.notify(id, notification)
-        } catch (se: SecurityException) {
-            // TODO show snackbar
-            Log.e("MainViewModel", "Unable to post notification", se)
-        }
-    }
-
-    /*
-     * Generates a BIG_PICTURE_STYLE Notification that supports both Wear 1.+ and Wear 2.0.
-     *
-     * This example Notification is a social post. It allows updating the notification with
-     * comments/responses via RemoteInput and the BigPictureSocialIntentService on 24+ (N+) and
-     * Wear devices.
-     *
-     * IMPORTANT NOTE:
-     * Notification Styles behave slightly different on Wear 2.0 when they are launched by a
-     * native/local Wear app, i.e., they will NOT expand when the user taps them but will instead
-     * take the user directly into the local app for the richest experience. In contrast, a bridged
-     * Notification launched from the phone will expand with the style details (whether there is a
-     * local app or not).
-     *
-     * If you want to enable an action on your Notification without launching the app, you can do so
-     * with the setHintDisplayActionInline() feature (shown below), but this only allows one action.
-     *
-     * If you wish to replicate the original experience of a bridged notification, please review the
-     * generateBigTextStyleNotification() method above to see how.
-     */
     fun generateBigPictureStyleNotification(activity: Activity) {
         viewModelScope.launch {
             notificationCentre.postPictureNotification(pictureNotification {
@@ -153,162 +115,46 @@ class MainViewModel(
         }
     }
 
-    /*
-     * Generates a MESSAGING_STYLE Notification that supports both Wear 1.+ and Wear 2.0. For
-     * devices on API level 24 (Wear 2.0) and after, displays MESSAGING_STYLE. Otherwise, displays
-     * a basic BIG_TEXT_STYLE.
-     *
-     * IMPORTANT NOTE:
-     * Notification Styles behave slightly different on Wear 2.0 when they are launched by a
-     * native/local Wear app, i.e., they will NOT expand when the user taps them but will instead
-     * take the user directly into the local app for the richest experience. In contrast, a bridged
-     * Notification launched from the phone will expand with the style details (whether there is a
-     * local app or not).
-     *
-     * If you want to enable an action on your Notification without launching the app, you can do so
-     * with the setHintDisplayActionInline() feature (shown below), but this only allows one action.
-     *
-     * If you wish to replicate the original experience of a bridged notification, please review the
-     * generateBigTextStyleNotification() method above to see how.
-     */
     fun generateMessagingStyleNotification(activity: Activity) {
-        Log.d(StandaloneMainActivity.TAG, "generateMessagingStyleNotification()")
+        viewModelScope.launch {
+            notificationCentre.postMessagingNotification(messagingNotification {
+                me = Me
 
-        // Main steps for building a MESSAGING_STYLE notification:
-        //      0. Get your data
-        //      1. Create/Retrieve Notification Channel for O and beyond devices (26+)
-        //      2. Build the MESSAGING_STYLE
-        //      3. Set up main Intent for notification
-        //      4. Set up RemoteInput (users can input directly from notification)
-        //      5. Build and issue the notification
+                title = "3 Messages w/ Famous, Wendy"
+                body = "HEY, I see my house! :)"
 
-        // 0. Get your data (everything unique per Notification).
-        val messagingStyleCommsAppData = MockDatabase.getMessagingStyleData(getApplication())
+                postReplies.addAll(listOf("Me too!", "How's the weather?", "You have good eyesight."))
 
-        // 1. Create/Retrieve Notification Channel for O and beyond devices (26+).
-        val notificationChannelId =
-            NotificationUtil.createNotificationChannel(activity, messagingStyleCommsAppData)!!
+                message.add(message {
+                    this.text = ""
+                    this.image = image {
+                        this.uri = resourceToUri(activity, R.drawable.earth).toString()
+                    }
+                    this.timestamp = 1528490641998L
+                    this.sender = contact {
+                        this.name = "Famous Frank"
+                        this.key = "9876543210"
+                        this.uri = "tel:9876543210"
+                    }
+                })
+                message.add(message {
+                    this.text = "Visiting the moon again? :P"
+                    this.timestamp = 1528490643998L
+                    this.sender = Me
+                })
+                message.add(message {
+                    this.text = "HEY, I see my house!"
+                    this.timestamp = 1528490645998L
+                    this.sender = contact {
+                        this.name = "Wendy Weather"
+                        this.key = "2233221122"
+                        this.uri = "tel:2233221122"
+                    }
+                })
+            })
 
-        // 2. Build the Notification.Style (MESSAGING_STYLE).
-        val contentTitle = messagingStyleCommsAppData.contentTitle
-        val messagingStyle = NotificationCompat.MessagingStyle(messagingStyleCommsAppData.me) /*
-                         * <p>This API's behavior was changed in SDK version
-                         * {@link Build.VERSION_CODES#P}. If your application's target version is
-                         * less than {@link Build.VERSION_CODES#P}, setting a conversation title to
-                         * a non-null value will make {@link #isGroupConversation()} return
-                         * {@code true} and passing {@code null} will make it return {@code false}.
-                         * This behavior can be overridden by calling
-                         * {@link #setGroupConversation(boolean)} regardless of SDK version.
-                         * In {@code P} and above, this method does not affect group conversation
-                         * settings.
-                         *
-                         * In our case, we use the same title.
-                         */
-            .setConversationTitle(contentTitle)
-
-        // Adds all Messages.
-        // Note: Messages include the text, timestamp, and sender.
-        for (message in messagingStyleCommsAppData.messages) {
-            messagingStyle.addMessage(message)
+            // Close app to demonstrate notification in steam.
+            activity.finish()
         }
-        messagingStyle.isGroupConversation = messagingStyleCommsAppData.isGroupConversation
-
-        // 3. Set up main Intent for notification.
-        val notifyIntent = Intent(
-            Intent.ACTION_VIEW,
-            "$DeepLinkPrefix/messaging?id=$StandaloneMainActivity.NOTIFICATION_ID".toUri()
-        )
-        val mainPendingIntent = PendingIntent.getActivity(
-            activity,
-            0,
-            notifyIntent,
-            PendingIntent.FLAG_IMMUTABLE
-        )
-
-
-        // 4. Set up a RemoteInput Action, so users can input (keyboard, drawing, voice) directly
-        // from the notification without entering the app.
-
-        // Create the RemoteInput specifying this key.
-        val replyLabel = activity.getString(R.string.reply_label)
-        val remoteInput = RemoteInput.Builder(MessagingIntentService.EXTRA_REPLY)
-            .setLabel(replyLabel) // Use machine learning to create responses based on previous messages.
-            .setChoices(messagingStyleCommsAppData.replyChoicesBasedOnLastMessage)
-            .build()
-
-        // Create PendingIntent for service that handles input.
-        val replyIntent = Intent(activity, MessagingIntentService::class.java)
-        replyIntent.action = MessagingIntentService.ACTION_REPLY
-        val replyActionPendingIntent =
-            PendingIntent.getService(activity, 0, replyIntent, PendingIntent.FLAG_UPDATE_CURRENT)
-
-        // Enable action to appear inline on Wear 2.0 (24+). This means it will appear over the
-        // lower portion of the Notification for easy action (only possible for one action).
-        val inlineActionForWear2 = NotificationCompat.Action.WearableExtender()
-            .setHintDisplayActionInline(true)
-            .setHintLaunchesActivity(false)
-        val replyAction = NotificationCompat.Action.Builder(
-            R.drawable.ic_reply_white_18dp,
-            replyLabel,
-            replyActionPendingIntent
-        )
-            .addRemoteInput(remoteInput) // Informs system we aren't bringing up our own custom UI for a reply
-            // action.
-            .setShowsUserInterface(false) // Allows system to generate replies by context of conversation.
-            .setAllowGeneratedReplies(true) // Add WearableExtender to enable inline actions.
-            .setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_REPLY)
-            .extend(inlineActionForWear2)
-            .build()
-
-
-        // 5. Build and issue the notification.
-
-        // Because we want this to be a new notification (not updating current notification), we
-        // create a new Builder. Later, we update this same notification, so we need to save this
-        // Builder globally (as outlined earlier).
-
-        // Notification Channel Id is ignored for Android pre O (26).
-        val notificationCompatBuilder = NotificationCompat.Builder(
-            getApplication(), notificationChannelId
-        )
-        notificationCompatBuilder // MESSAGING_STYLE sets title and content for Wear 1.+ and Wear 2.0 devices.
-            .setStyle(messagingStyle)
-            .setContentTitle(contentTitle)
-            .setContentText(messagingStyleCommsAppData.contentText)
-            .setSmallIcon(R.drawable.ic_launcher)
-            .setLargeIcon(
-                BitmapFactory.decodeResource(
-                    activity.resources,
-                    R.drawable.ic_person_black_48dp
-                )
-            )
-            .setContentIntent(mainPendingIntent)
-            .setDefaults(NotificationCompat.DEFAULT_ALL) // Set primary color (important for Wear 2.0 Notifications).
-            .setColor(
-                ContextCompat.getColor(
-                    getApplication(),
-                    R.color.colorPrimary
-                )
-            ) // Number of new notifications for API <24 (Wear 1.+) devices.
-            .setSubText(messagingStyleCommsAppData.numberOfNewMessages.toString())
-            .addAction(replyAction)
-            .setCategory(Notification.CATEGORY_MESSAGE) // Sets priority for 25 and below. For 26 and above, 'priority' is deprecated for
-            // 'importance' which is set in the NotificationChannel. The integers representing
-            // 'priority' are different from 'importance', so make sure you don't mix them.
-            .setPriority(messagingStyleCommsAppData.priority) // Sets lock-screen visibility for 25 and below. For 26 and above, lock screen
-            // visibility is set in the NotificationChannel.
-            .setVisibility(messagingStyleCommsAppData.channelLockscreenVisibility)
-
-        // If the phone is in "Do not disturb" mode, the user may still be notified if the
-        // sender(s) are in a group allowed through "Do not disturb" by the user.
-        for (person in messagingStyleCommsAppData.participants) {
-            notificationCompatBuilder.addPerson(person.uri)
-        }
-        val notification = notificationCompatBuilder.build()
-
-        postNotification(StandaloneMainActivity.NOTIFICATION_ID, notification)
-
-        // Close app to demonstrate notification in steam.
-        activity.finish()
     }
 }
