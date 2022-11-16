@@ -20,4 +20,9 @@ class WearIntentBuilder(
         Intent.ACTION_VIEW,
         "$DeepLinkPrefix/text?id=$id".toUri()
     )
+
+    override fun inboxScreenIntent(id: Int): Intent = Intent(
+        Intent.ACTION_VIEW,
+        "$DeepLinkPrefix/inbox?id=$id".toUri()
+    )
 }

@@ -6,6 +6,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationManagerCompat
 import com.example.android.wearable.wear.common.navigation.IntentBuilder
 import com.example.android.wearable.wear.common.mock.MockDatabase
@@ -15,10 +16,13 @@ abstract class NotificationRenderer<T>(
     val intentBuilder: IntentBuilder,
     val notificationManagerCompat: NotificationManagerCompat
 ) {
-    abstract fun createNotificationChannel()
-    abstract fun createNotification(id: Int, notificationData: T): Notification
+    @RequiresApi(Build.VERSION_CODES.O)
+    abstract fun buildNotificationChannel(): NotificationChannel
+    abstract fun buildNotification(id: Int, notificationData: T): Notification
 
-    fun createNotificationChannel(
+    abstract val channelId: String
+
+    fun buildNotificationChannel(
         mockNotificationData: MockDatabase.MockNotificationData
     ) {
         // NotificationChannels are required for Notifications on O (API 26) and above.

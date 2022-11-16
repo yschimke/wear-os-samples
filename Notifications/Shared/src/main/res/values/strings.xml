@@ -16,4 +16,6 @@
     <string name="app_name">Shared</string>
     <string name="text_channel_name">Big Text</string>
     <string name="text_channel_description">Big Text Notifications</string>
+    <string name="inbox_channel_name">Sample Email</string>
+    <string name="inbox_channel_description">Sample Email Notifications</string>
 </resources>

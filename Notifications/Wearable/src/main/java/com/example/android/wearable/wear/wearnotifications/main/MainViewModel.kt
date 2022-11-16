@@ -20,6 +20,9 @@ import com.example.android.wearable.wear.wearnotifications.R
 import com.example.android.wearable.wear.wearnotifications.WearNotificationApplication
 import com.example.android.wearable.wear.wearnotifications.handlers.BigPictureSocialIntentService
 import com.example.android.wearable.wear.wearnotifications.handlers.MessagingIntentService
+import com.example.android.wearable.wear.wearnotifications.proto.contact
+import com.example.android.wearable.wear.wearnotifications.proto.email
+import com.example.android.wearable.wear.wearnotifications.proto.inboxNotification
 import com.example.android.wearable.wear.wearnotifications.proto.textNotification
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,30 +40,13 @@ class MainViewModel(
         )
     )
 
-    /*
-     * Generates a BIG_TEXT_STYLE Notification that supports both Wear 1.+ and Wear 2.0.
-     *
-     * IMPORTANT NOTE:
-     * This method includes extra code to replicate Notification Styles behavior from Wear 1.+ and
-     * phones on Wear 2.0, i.e., the notification expands on click. To see the specific code in the
-     * method, search for "REPLICATE_NOTIFICATION_STYLE_CODE".
-     *
-     * Notification Styles behave slightly different on Wear 2.0 when they are launched by a
-     * native/local Wear app, i.e., they will NOT expand when the user taps them but will instead
-     * take the user directly into the local app for the richest experience. In contrast, a bridged
-     * Notification launched from the phone will expand with the style details (whether there is a
-     * local app or not).
-     *
-     * If you want to see the new behavior, please review the generateBigPictureStyleNotification()
-     * and generateMessagingStyleNotification() methods.
-     */
     fun generateBigTextStyleNotification(activity: Activity) {
         viewModelScope.launch {
             notificationCentre.postTextNotification(textNotification {
                 title = "Don't forget to..."
                 body =
                     "... feed the dogs before you leave for work, and check the garage to make sure the door is closed."
-                summary = "Dogs and Garage"
+                summary = "Feed Dogs and Garage"
             })
 
             // Close app to demonstrate notification in steam.
@@ -219,103 +205,52 @@ class MainViewModel(
         activity.finish()
     }
 
-    /*
-     * Generates a INBOX_STYLE Notification that supports both Wear 1.+ and Wear 2.0.
-     */
     fun generateInboxStyleNotification(activity: Activity) {
-        Log.d(StandaloneMainActivity.TAG, "generateInboxStyleNotification()")
+        viewModelScope.launch {
+            notificationCentre.postInboxNotification(inboxNotification {
+                title = "5 new emails"
+                bigContent = "5 new emails from Jane, Jay, Alex +2"
+                summary = "New emails"
 
+                email.add(email {
+                    summary = "Launch Party is here..."
+                    this.participant.add(contact {
+                        name = "Jane Faab"
+                    })
+                })
 
-        // Main steps for building a INBOX_STYLE notification:
-        //      0. Get your data
-        //      1. Create/Retrieve Notification Channel for O and beyond devices (26+)
-        //      2. Build the INBOX_STYLE
-        //      3. Set up main Intent for notification
-        //      4. Build and issue the notification
+                email.add(email {
+                    summary = "There's a turtle on the server!"
+                    this.participant.add(contact {
+                        name = "Jay Walker"
+                    })
+                })
 
-        // 0. Get your data (everything unique per Notification).
-        val inboxStyleEmailAppData = MockDatabase.inboxStyleData
+                email.add(email {
+                    summary = "Check this out..."
+                    this.participant.add(contact {
+                        name = "Alex Chang"
+                    })
+                })
 
-        // 1. Create/Retrieve Notification Channel for O and beyond devices (26+).
-        val notificationChannelId =
-            NotificationUtil.createNotificationChannel(activity, inboxStyleEmailAppData)!!
+                email.add(email {
+                    summary = "Check in code?"
+                    this.participant.add(contact {
+                        name = "Jane Johns"
+                    })
+                })
 
-        // 2. Build the INBOX_STYLE
-        val inboxStyle =
-            NotificationCompat.InboxStyle() // This title is slightly different than regular title, since I know INBOX_STYLE is
-                // available.
-                .setBigContentTitle(inboxStyleEmailAppData.bigContentTitle)
-                .setSummaryText(inboxStyleEmailAppData.summaryText)
+                email.add(email {
+                    summary = "Movies later...."
+                    this.participant.add(contact {
+                        name = "John Smith"
+                    })
+                })
+            })
 
-        // Add each summary line of the new emails, you can add up to 5.
-        for (summary in inboxStyleEmailAppData.individualEmailSummary) {
-            inboxStyle.addLine(summary)
+            // Close app to demonstrate notification in steam.
+            activity.finish()
         }
-
-        // 3. Set up main Intent for notification.
-        val mainIntent = Intent(
-            Intent.ACTION_VIEW,
-            "$DeepLinkPrefix/inbox?id=$StandaloneMainActivity.NOTIFICATION_ID".toUri()
-        )
-        val mainPendingIntent = PendingIntent.getActivity(
-            activity,
-            0,
-            mainIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        // 4. Build and issue the notification.
-
-        // Because we want this to be a new notification (not updating a previous notification), we
-        // create a new Builder. However, we don't need to update this notification later, so we
-        // will not need to set a global builder for access to the notification later.
-
-        // Notification Channel Id is ignored for Android pre O (26).
-        val notificationCompatBuilder = NotificationCompat.Builder(
-            getApplication(), notificationChannelId
-        )
-        notificationCompatBuilder // INBOX_STYLE sets title and content.
-            .setStyle(inboxStyle)
-            .setContentTitle(inboxStyleEmailAppData.contentTitle)
-            .setContentText(inboxStyleEmailAppData.contentText)
-            .setSmallIcon(R.drawable.ic_launcher)
-            .setLargeIcon(
-                BitmapFactory.decodeResource(
-                    activity.resources,
-                    R.drawable.ic_person_black_48dp
-                )
-            )
-            .setContentIntent(mainPendingIntent)
-            .setDefaults(NotificationCompat.DEFAULT_ALL) // Set primary color (important for Wear 2.0 Notifications).
-            .setColor(
-                ContextCompat.getColor(
-                    getApplication(),
-                    R.color.colorPrimary
-                )
-            ) // Sets large number at the right-hand side of the notification for Wear 1.+.
-            .setSubText(inboxStyleEmailAppData.numberOfNewEmails.toString())
-            .setCategory(Notification.CATEGORY_EMAIL) // Sets priority for 25 and below. For 26 and above, 'priority' is deprecated for
-            // 'importance' which is set in the NotificationChannel. The integers representing
-            // 'priority' are different from 'importance', so make sure you don't mix them.
-            .setPriority(inboxStyleEmailAppData.priority) // Sets lock-screen visibility for 25 and below. For 26 and above, lock screen
-            // visibility is set in the NotificationChannel.
-            .setVisibility(inboxStyleEmailAppData.channelLockscreenVisibility) // Notifies system that the main launch intent is an Activity.
-            .extend(
-                NotificationCompat.WearableExtender()
-                    .setHintContentIntentLaunchesActivity(true)
-            )
-
-        // If the phone is in "Do not disturb mode, the user will still be notified if
-        // the sender(s) is starred as a favorite.
-        for (name in inboxStyleEmailAppData.participants) {
-            notificationCompatBuilder.addPerson(name)
-        }
-        val notification = notificationCompatBuilder.build()
-
-        postNotification(StandaloneMainActivity.NOTIFICATION_ID, notification)
-
-        // Close app to demonstrate notification in steam.
-        activity.finish()
     }
 
     /*

@@ -27,10 +27,27 @@ message TextNotification {
   string summary = 3;
 }
 
+message Contact {
+  string name = 1;
+}
+
+message Email {
+  string summary = 1;
+  repeated Contact participant = 2;
+}
+
+message InboxNotification {
+  string title = 1;
+  string summary = 2;
+  string bigContent = 3;
+  repeated Email email = 4;
+}
+
 message PostedNotification {
   int32 id = 1;
   oneof notification_content {
     TextNotification text = 2;
+    InboxNotification inbox = 3;
   }
 }
 
