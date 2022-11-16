@@ -16,11 +16,7 @@ limitations under the License.
 package com.example.android.wearable.wear.wearnotifications.handlers
 
 import android.app.NotificationManager
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment

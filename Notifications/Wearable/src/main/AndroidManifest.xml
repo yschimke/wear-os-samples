@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
   ~ Copyright 2016 Google Inc.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,24 +14,28 @@
   ~ limitations under the License.
   -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.example.android.wearable.wear.wearnotifications"
-          android:versionCode="1"
-          android:versionName="1.0">
+    package="com.example.android.wearable.wear.wearnotifications"
+    android:versionCode="1"
+    android:versionName="1.0">
 
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <uses-feature android:name="android.hardware.type.watch"/>
+    <uses-feature android:name="android.hardware.type.watch" />
     <!-- Required for Always-on. -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    <application android:allowBackup="true"
-                 android:icon="@mipmap/ic_launcher"
-                 android:label="@string/app_name"
-                 android:supportsRtl="true"
-                 android:theme="@android:style/Theme.Material">
+    <application
+        android:name=".WearNotificationApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.Material">
 
         <!-- Let's Play Store know this app is standalone. -->
-        <meta-data android:name="com.google.android.wearable.standalone" android:value="true"/>
+        <meta-data
+            android:name="com.google.android.wearable.standalone"
+            android:value="true" />
 
         <!--
         Important Note: Usually, you will want to disable bridging if you have a local/native
@@ -46,7 +49,8 @@
             value: NO_BRIDGING
         -->
 
-        <activity android:name=".StandaloneComposeActivity"
+        <activity
+            android:name=".StandaloneComposeActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -66,18 +70,15 @@
         </activity>
 
         <service
-            android:name=".handlers.BigTextIntentService"
-            android:exported="false">
-        </service>
+            android:name="com.example.android.wearable.wear.common.CoreNotificationActionsService"
+            android:exported="false"></service>
 
         <service
             android:name=".handlers.MessagingIntentService"
-            android:exported="false">
-        </service>
+            android:exported="false"></service>
 
         <service
             android:name=".handlers.BigPictureSocialIntentService"
-            android:exported="false">
-        </service>
+            android:exported="false"></service>
     </application>
 </manifest>

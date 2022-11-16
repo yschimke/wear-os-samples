@@ -19,8 +19,24 @@ syntax = "proto3";
 package com.example.android.wearable.wear.wearnotifications.proto;
 
 option java_package = "com.example.android.wearable.wear.wearnotifications.proto";
-option java_outer_classname = "SettingsProto";
+option java_outer_classname = "NotificationsProto";
 
 message Settings {
   bool bridging = 1;
+}
+
+message TextNotification {
+  string text = 1;
+}
+
+message PostedNotification {
+  int32 id = 1;
+  oneof notification_content {
+    TextNotification text = 2;
+  }
+}
+
+message PostedNotifications {
+  repeated PostedNotification notification = 1;
+  int32 lastId = 2;
 }

@@ -29,8 +29,8 @@ import androidx.core.app.RemoteInput
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.example.android.wearable.wear.common.mock.MockDatabase
+import com.example.android.wearable.wear.wearnotifications.DeepLinkPrefix
 import com.example.android.wearable.wear.wearnotifications.R
-import com.example.android.wearable.wear.wearnotifications.deepLinkPrefix
 import com.example.android.wearable.wear.wearnotifications.main.StandaloneMainActivity
 
 /**
@@ -168,7 +168,7 @@ class MessagingIntentService : Service() {
         messagingStyle.isGroupConversation = messagingStyleCommsAppData.isGroupConversation
 
         // 3. Set up main Intent for notification.
-        val notifyIntent = Intent(Intent.ACTION_VIEW, "$deepLinkPrefix/messaging?id=$StandaloneMainActivity.NOTIFICATION_ID".toUri())
+        val notifyIntent = Intent(Intent.ACTION_VIEW, "$DeepLinkPrefix/messaging?id=$StandaloneMainActivity.NOTIFICATION_ID".toUri())
         val mainPendingIntent =
             PendingIntent.getActivity(this, 0, notifyIntent, PendingIntent.FLAG_UPDATE_CURRENT)
 

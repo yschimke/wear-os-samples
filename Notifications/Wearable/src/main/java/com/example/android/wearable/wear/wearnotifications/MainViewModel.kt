@@ -8,26 +8,32 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.RemoteInput
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.android.wearable.wear.common.mock.MockDatabase
 import com.example.android.wearable.wear.common.util.NotificationUtil
 import com.example.android.wearable.wear.wearnotifications.handlers.BigPictureSocialIntentService
-import com.example.android.wearable.wear.wearnotifications.handlers.BigTextIntentService
 import com.example.android.wearable.wear.wearnotifications.handlers.MessagingIntentService
 import com.example.android.wearable.wear.wearnotifications.main.StandaloneMainActivity
+import com.example.android.wearable.wear.wearnotifications.proto.textNotification
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
-class MainViewModel(application: Application) : AndroidViewModel(application) {
-    private val mNotificationManagerCompat = NotificationManagerCompat.from(application)
+class MainViewModel(
+    application: Application,
+) : AndroidViewModel(application) {
+    private val notificationCentre = (application as WearNotificationApplication).notificationCentre
+    private val mNotificationManagerCompat = (application as WearNotificationApplication).notificationManager
 
-    val uiState: StateFlow<MainUiState> = MutableStateFlow(MainUiState(
-        mNotificationManagerCompat.areNotificationsEnabled()
-    ))
+    val uiState: StateFlow<MainUiState> = MutableStateFlow(
+        MainUiState(
+            mNotificationManagerCompat.areNotificationsEnabled()
+        )
+    )
 
     /*
      * Generates a BIG_TEXT_STYLE Notification that supports both Wear 1.+ and Wear 2.0.
@@ -47,141 +53,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * and generateMessagingStyleNotification() methods.
      */
     fun generateBigTextStyleNotification(activity: Activity) {
-        Log.d(StandaloneMainActivity.TAG, "generateBigTextStyleNotification()")
+        viewModelScope.launch {
+            notificationCentre.postTextNotification(textNotification {
+                this.text =
+                    "... feed the dogs before you leave for work, and check the garage to make sure the door is closed."
+            })
 
-        // Main steps for building a BIG_TEXT_STYLE notification:
-        //      0. Get your data
-        //      1. Create/Retrieve Notification Channel for O and beyond devices (26+)
-        //      2. Build the BIG_TEXT_STYLE
-        //      3. Set up main Intent for notification
-        //      4. Create additional Actions for the Notification
-        //      5. Build and issue the notification
-
-        // 0. Get your data (everything unique per Notification).
-        val bigTextStyleReminderAppData = MockDatabase.getBigTextStyleData()
-
-        // 1. Create/Retrieve Notification Channel for O and beyond devices (26+).
-        val notificationChannelId =
-            NotificationUtil.createNotificationChannel(activity, bigTextStyleReminderAppData)!!
-
-        // 2. Build the BIG_TEXT_STYLE
-        val bigTextStyle =
-            NotificationCompat.BigTextStyle() // Overrides ContentText in the big form of the template.
-                .bigText(bigTextStyleReminderAppData.bigText) // Overrides ContentTitle in the big form of the template.
-                .setBigContentTitle(bigTextStyleReminderAppData.bigContentTitle) // Summary line after the detail section in the big form of the template
-                // Note: To improve readability, don't overload the user with info. If Summary Text
-                // doesn't add critical information, you should skip it.
-                .setSummaryText(bigTextStyleReminderAppData.summaryText)
-
-
-        // 3. Set up main Intent for notification.
-        val mainIntent = Intent(Intent.ACTION_VIEW, "$deepLinkPrefix/text?id=$StandaloneMainActivity.NOTIFICATION_ID".toUri())
-        val mainPendingIntent = PendingIntent.getActivity(
-            activity,
-            0,
-            mainIntent,
-            PendingIntent.FLAG_IMMUTABLE
-        )
-
-
-        // 4. Create additional Actions (Intents) for the Notification.
-
-        // In our case, we create two additional actions: a Snooze action and a Dismiss action.
-
-        // Snooze Action.
-        val snoozeIntent = Intent(activity, BigTextIntentService::class.java)
-        snoozeIntent.action =
-            BigTextIntentService.ACTION_SNOOZE
-        val snoozePendingIntent = PendingIntent.getService(
-            activity,
-            0,
-            snoozeIntent,
-            PendingIntent.FLAG_IMMUTABLE
-        )
-        val snoozeAction = NotificationCompat.Action.Builder(
-            R.drawable.ic_alarm_white_48dp,
-            "Snooze",
-            snoozePendingIntent
-        )
-            .build()
-
-        // Dismiss Action.
-        val dismissIntent = Intent(activity, BigTextIntentService::class.java)
-        dismissIntent.action =
-            BigTextIntentService.ACTION_DISMISS
-        val dismissPendingIntent = PendingIntent.getService(
-            activity,
-            0,
-            dismissIntent,
-            PendingIntent.FLAG_IMMUTABLE
-        )
-        val dismissAction = NotificationCompat.Action.Builder(
-            R.drawable.ic_cancel_white_48dp,
-            "Dismiss",
-            dismissPendingIntent
-        )
-            .build()
-
-
-        // 5. Build and issue the notification.
-
-        // Because we want this to be a new notification (not updating a previous notification), we
-        // create a new Builder. Later, we use the same global builder to get back the notification
-        // we built here for the snooze action, that is, canceling the notification and relaunching
-        // it several seconds later.
-
-        // Notification Channel Id is ignored for Android pre O (26).
-        val notificationCompatBuilder = NotificationCompat.Builder(
-            getApplication(), notificationChannelId
-        )
-        notificationCompatBuilder // BIG_TEXT_STYLE sets title and content.
-            .setStyle(bigTextStyle)
-            .setContentTitle(bigTextStyleReminderAppData.contentTitle)
-            .setContentText(bigTextStyleReminderAppData.contentText)
-            .setSmallIcon(R.drawable.ic_launcher)
-            .setLargeIcon(
-                BitmapFactory.decodeResource(
-                    activity.resources,
-                    R.drawable.ic_alarm_white_48dp
-                )
-            )
-            .setDefaults(NotificationCompat.DEFAULT_ALL) // Set primary color (important for Wear 2.0 Notifications).
-            .setColor(ContextCompat.getColor(activity, R.color.colorPrimary))
-            .setCategory(Notification.CATEGORY_REMINDER) // Sets priority for 25 and below. For 26 and above, 'priority' is deprecated for
-            // 'importance' which is set in the NotificationChannel. The integers representing
-            // 'priority' are different from 'importance', so make sure you don't mix them.
-            .setPriority(bigTextStyleReminderAppData.priority) // Sets lock-screen visibility for 25 and below. For 26 and above, lock screen
-            // visibility is set in the NotificationChannel.
-            .setVisibility(bigTextStyleReminderAppData.channelLockscreenVisibility) // Adds additional actions specified above.
-            .addAction(snoozeAction)
-            .addAction(dismissAction)
-
-        /* REPLICATE_NOTIFICATION_STYLE_CODE:
-         * You can replicate Notification Style functionality on Wear 2.0 (24+) by not setting the
-         * main content intent, that is, skipping the call setContentIntent(). However, you need to
-         * still allow the user to open the native Wear app from the Notification itself, so you
-         * add an action to launch the app.
-         */
-
-        // Enables launching app in Wear 2.0 while keeping the old Notification Style behavior.
-        val mainAction = NotificationCompat.Action.Builder(
-            R.drawable.ic_launcher,
-            "Open",
-            mainPendingIntent
-        )
-            .build()
-        notificationCompatBuilder.addAction(mainAction)
-        val notification = notificationCompatBuilder.build()
-
-        postNotification(notification)
-
-        // Close app to demonstrate notification in steam.
-        activity.finish()
+            // Close app to demonstrate notification in steam.
+            activity.finish()
+        }
     }
 
-    private fun postNotification(notification: Notification) {
+    private fun postNotification(id: Int, notification: Notification) {
         try {
-            mNotificationManagerCompat.notify(StandaloneMainActivity.NOTIFICATION_ID, notification)
+            mNotificationManagerCompat.notify(id, notification)
         } catch (se: SecurityException) {
             // TODO show snackbar
             Log.e("MainViewModel", "Unable to post notification", se)
@@ -239,7 +124,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             NotificationUtil.createNotificationChannel(activity, bigPictureStyleSocialAppData)!!
 
         // 3. Set up main Intent for notification.
-        val mainIntent = Intent(Intent.ACTION_VIEW, "$deepLinkPrefix/picture?id=$StandaloneMainActivity.NOTIFICATION_ID".toUri())
+        val mainIntent = Intent(
+            Intent.ACTION_VIEW,
+            "$DeepLinkPrefix/picture?id=$StandaloneMainActivity.NOTIFICATION_ID".toUri()
+        )
         val mainPendingIntent = PendingIntent.getActivity(
             activity,
             0,
@@ -321,7 +209,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
         val notification = notificationCompatBuilder.build()
 
-        postNotification(notification)
+        postNotification(StandaloneMainActivity.NOTIFICATION_ID, notification)
 
         // Close app to demonstrate notification in steam.
         activity.finish()
@@ -361,7 +249,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         // 3. Set up main Intent for notification.
-        val mainIntent = Intent(Intent.ACTION_VIEW, "$deepLinkPrefix/inbox?id=$StandaloneMainActivity.NOTIFICATION_ID".toUri())
+        val mainIntent = Intent(
+            Intent.ACTION_VIEW,
+            "$DeepLinkPrefix/inbox?id=$StandaloneMainActivity.NOTIFICATION_ID".toUri()
+        )
         val mainPendingIntent = PendingIntent.getActivity(
             activity,
             0,
@@ -417,7 +308,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
         val notification = notificationCompatBuilder.build()
 
-        postNotification(notification)
+        postNotification(StandaloneMainActivity.NOTIFICATION_ID, notification)
 
         // Close app to demonstrate notification in steam.
         activity.finish()
@@ -484,7 +375,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         messagingStyle.isGroupConversation = messagingStyleCommsAppData.isGroupConversation
 
         // 3. Set up main Intent for notification.
-        val notifyIntent = Intent(Intent.ACTION_VIEW, "$deepLinkPrefix/messaging?id=$StandaloneMainActivity.NOTIFICATION_ID".toUri())
+        val notifyIntent = Intent(
+            Intent.ACTION_VIEW,
+            "$DeepLinkPrefix/messaging?id=$StandaloneMainActivity.NOTIFICATION_ID".toUri()
+        )
         val mainPendingIntent = PendingIntent.getActivity(
             activity,
             0,
@@ -573,7 +467,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
         val notification = notificationCompatBuilder.build()
 
-        postNotification(notification)
+        postNotification(StandaloneMainActivity.NOTIFICATION_ID, notification)
 
         // Close app to demonstrate notification in steam.
         activity.finish()

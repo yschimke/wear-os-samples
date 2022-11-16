@@ -863,8 +863,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         Notification notification = notificationCompatBuilder.build();
 
-        notification.
-
         try {
             mNotificationManagerCompat.notify(NOTIFICATION_ID, notification);
         } catch (SecurityException se) {

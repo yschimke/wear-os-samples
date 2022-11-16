@@ -2,7 +2,6 @@ package com.example.android.wearable.wear.wearnotifications
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
@@ -48,7 +47,7 @@ fun WearNotificationApp(
                 type = NavType.StringType
             }),
             deepLinks = listOf(navDeepLink {
-                uriPattern = "$deepLinkPrefix/picture?id={id}"
+                uriPattern = "$DeepLinkPrefix/picture?id={id}"
             })
         ) { _, _ ->
             BigPictureMainScreen()
@@ -59,7 +58,7 @@ fun WearNotificationApp(
                 type = NavType.StringType
             }),
             deepLinks = listOf(navDeepLink {
-                uriPattern = "$deepLinkPrefix/text?id={id}"
+                uriPattern = "$DeepLinkPrefix/text?id={id}"
             })
         ) { _, _ ->
             BigTextMainScreen()
@@ -70,7 +69,7 @@ fun WearNotificationApp(
                 type = NavType.StringType
             }),
             deepLinks = listOf(navDeepLink {
-                uriPattern = "$deepLinkPrefix/inbox?id={id}"
+                uriPattern = "$DeepLinkPrefix/inbox?id={id}"
             })
         ) { _, _ ->
             InboxMainScreen()
@@ -81,7 +80,7 @@ fun WearNotificationApp(
                 type = NavType.StringType
             }),
             deepLinks = listOf(navDeepLink {
-                uriPattern = "$deepLinkPrefix/messaging?id={id}"
+                uriPattern = "$DeepLinkPrefix/messaging?id={id}"
             })
         ) { _, _ ->
             MessagingMainScreen()
@@ -89,4 +88,4 @@ fun WearNotificationApp(
     }
 }
 
-val deepLinkPrefix = "notifsample://notifsample"
+val DeepLinkPrefix = "notifsample://notifsample"

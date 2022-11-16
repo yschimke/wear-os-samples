@@ -1,0 +1,23 @@
+package com.example.android.wearable.wear.wearnotifications.handlers
+
+import android.content.Context
+import android.content.Intent
+import androidx.core.net.toUri
+import com.example.android.wearable.wear.common.CoreNotificationActionsService
+import com.example.android.wearable.wear.common.IntentBuilder
+import com.example.android.wearable.wear.wearnotifications.DeepLinkPrefix
+
+class WearIntentBuilder(
+    val context: Context
+): IntentBuilder {
+    override fun dismissIntent(id: Int): Intent {
+        val dismissIntent = Intent(context, CoreNotificationActionsService::class.java)
+        dismissIntent.action = CoreNotificationActionsService.ACTION_DISMISS
+        return dismissIntent
+    }
+
+    override fun textScreenIntent(id: Int): Intent = Intent(
+        Intent.ACTION_VIEW,
+        "$DeepLinkPrefix/text?id=$id".toUri()
+    )
+}

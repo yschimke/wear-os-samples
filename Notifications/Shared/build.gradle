@@ -83,5 +83,6 @@ dependencies {
     implementation libs.androidx.lifecycle.viewmodel.compose
     implementation libs.androidx.lifecycle.runtime.ktx
     implementation libs.playservices.wearable
-    implementation libs.protobuf.kotlin.lite
+    api libs.protobuf.kotlin.lite
+    api libs.androidx.datastore
 }
