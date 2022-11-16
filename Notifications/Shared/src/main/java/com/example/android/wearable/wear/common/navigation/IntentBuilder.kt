@@ -6,4 +6,6 @@ interface IntentBuilder {
     fun dismissIntent(id: Int): Intent
     fun textScreenIntent(id: Int): Intent
     fun inboxScreenIntent(id: Int): Intent
+    fun pictureScreenIntent(id: Int): Intent
+    fun pictureReplyIntent(id: Int): Intent
 }

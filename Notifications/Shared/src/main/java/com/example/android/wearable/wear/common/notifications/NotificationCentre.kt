@@ -8,9 +8,12 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.datastore.core.DataStore
 import com.example.android.wearable.wear.common.navigation.IntentBuilder
 import com.example.android.wearable.wear.wearnotifications.proto.NotificationsProto.InboxNotification
+import com.example.android.wearable.wear.wearnotifications.proto.NotificationsProto.PictureNotification
 import com.example.android.wearable.wear.wearnotifications.proto.NotificationsProto.PostedNotifications
 import com.example.android.wearable.wear.wearnotifications.proto.NotificationsProto.TextNotification
+import com.example.android.wearable.wear.wearnotifications.proto.PictureNotificationKt
 import com.example.android.wearable.wear.wearnotifications.proto.PostedNotificationKt
+import com.example.android.wearable.wear.wearnotifications.proto.copy
 import com.example.android.wearable.wear.wearnotifications.proto.postedNotification
 
 class NotificationCentre(
@@ -23,6 +26,8 @@ class NotificationCentre(
         TextNotificationRenderer(context, intentBuilder, notificationManager)
     val inboxNotificationRenderer =
         InboxNotificationRenderer(context, intentBuilder, notificationManager)
+    val pictureNotificationRenderer =
+        PictureNotificationRenderer(context, intentBuilder, notificationManager)
 
     fun createChannels() {
         // NotificationChannels are required for Notifications on O (API 26) and above.
@@ -35,6 +40,9 @@ class NotificationCentre(
 
             val inboxChannel = inboxNotificationRenderer.buildNotificationChannel()
             notificationManager.createNotificationChannel(inboxChannel)
+
+            val pictureChannel = pictureNotificationRenderer.buildNotificationChannel()
+            notificationManager.createNotificationChannel(pictureChannel)
         }
     }
 
@@ -42,6 +50,18 @@ class NotificationCentre(
         return postNotification({
             this.text = textNotification
         }, textNotificationRenderer, textNotification)
+    }
+
+    suspend fun postInboxNotification(inboxNotification: InboxNotification): Int {
+        return postNotification({
+            this.inbox = inboxNotification
+        }, inboxNotificationRenderer, inboxNotification)
+    }
+
+    suspend fun postPictureNotification(pictureNotification: PictureNotification): Int {
+        return postNotification({
+            this.picture = pictureNotification
+        }, pictureNotificationRenderer, pictureNotification)
     }
 
     suspend fun <T> postNotification(
@@ -69,6 +89,32 @@ class NotificationCentre(
         return id
     }
 
+    suspend fun updatePictureNotification(id: Int, update: PictureNotificationKt.Dsl.() -> Unit) {
+        postedNotificationsDataStore.updateData { postedNotifications ->
+            val existingNotification = postedNotifications.notificationList.indexOfFirst {
+                it.id == id && it.hasPicture()
+            }
+
+            if (existingNotification > -1) {
+                val postedNotification = postedNotifications.getNotification(existingNotification)
+                val updatedPictureNotification = postedNotification.picture.copy(update)
+
+                val newNotification = pictureNotificationRenderer.buildNotification(id, updatedPictureNotification)
+                postNotification(id, newNotification)
+
+                postedNotifications.copy {
+                    notification[existingNotification] = postedNotification.copy {
+                        picture = updatedPictureNotification
+                    }
+                }
+            } else {
+                Log.e("NotificationCentre", "Unable to update notification")
+
+                postedNotifications
+            }
+        }
+    }
+
     suspend fun clearNotification(id: Int) {
         postedNotificationsDataStore.updateData {
             val index = it.notificationList.indexOfFirst { notification ->
@@ -92,13 +138,7 @@ class NotificationCentre(
             notificationManager.notify(id, notification)
         } catch (se: SecurityException) {
             // TODO show snackbar
-            Log.e("MainViewModel", "Unable to post notification", se)
+            Log.e("NotificationCentre", "Unable to post notification", se)
         }
-    }
-
-    suspend fun postInboxNotification(inboxNotification: InboxNotification): Int {
-        return postNotification({
-            this.inbox = inboxNotification
-        }, inboxNotificationRenderer, inboxNotification)
     }
 }

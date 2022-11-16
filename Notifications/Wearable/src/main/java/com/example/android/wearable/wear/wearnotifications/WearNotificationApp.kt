@@ -48,7 +48,7 @@ fun WearNotificationApp(
         wearNavComposable(
             route = "picture?id={id}",
             arguments = listOf(navArgument("id") {
-                type = NavType.StringType
+                type = NavType.IntType
             }),
             deepLinks = listOf(navDeepLink {
                 uriPattern = "$DeepLinkPrefix/picture?id={id}"
@@ -86,7 +86,7 @@ fun WearNotificationApp(
         wearNavComposable(
             route = "inbox?id={id}",
             arguments = listOf(navArgument("id") {
-                type = NavType.StringType
+                type = NavType.IntType
             }),
             deepLinks = listOf(navDeepLink {
                 uriPattern = "$DeepLinkPrefix/inbox?id={id}"
@@ -105,7 +105,7 @@ fun WearNotificationApp(
         wearNavComposable(
             route = "messaging?id={id}",
             arguments = listOf(navArgument("id") {
-                type = NavType.StringType
+                type = NavType.IntType
             }),
             deepLinks = listOf(navDeepLink {
                 uriPattern = "$DeepLinkPrefix/messaging?id={id}"

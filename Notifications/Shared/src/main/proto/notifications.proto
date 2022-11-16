@@ -43,11 +43,19 @@ message InboxNotification {
   repeated Email email = 4;
 }
 
+message PictureNotification {
+  string title = 1;
+  string body = 2;
+  string summary = 3;
+  repeated string comment = 4;
+}
+
 message PostedNotification {
   int32 id = 1;
   oneof notification_content {
     TextNotification text = 2;
     InboxNotification inbox = 3;
+    PictureNotification picture = 4;
   }
 }
 
