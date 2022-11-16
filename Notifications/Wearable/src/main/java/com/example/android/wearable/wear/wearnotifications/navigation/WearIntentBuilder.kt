@@ -14,6 +14,7 @@ class WearIntentBuilder(
     override fun dismissIntent(id: Int): Intent =
         Intent(context, CoreNotificationActionsService::class.java).apply {
             action = CoreNotificationActionsService.ACTION_DISMISS
+            putExtra(CoreNotificationActionsService.EXTRA_NOTIFICATION_ID, id)
         }
 
     override fun textScreenIntent(id: Int): Intent = Intent(
@@ -34,6 +35,7 @@ class WearIntentBuilder(
     override fun pictureReplyIntent(id: Int): Intent {
         return Intent(context, BigPictureSocialIntentService::class.java).apply {
             action = BigPictureSocialIntentService.ACTION_COMMENT
+            putExtra(CoreNotificationActionsService.EXTRA_NOTIFICATION_ID, id)
         }
     }
 }
