@@ -5,7 +5,7 @@ import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.Serializer
 import androidx.datastore.dataStore
-import com.example.android.wearable.wear.wearnotifications.proto.NotificationsProto.Settings
+import com.example.android.wearable.wear.wearnotifications.proto.SettingsProto.Settings
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.InputStream
 import java.io.OutputStream
