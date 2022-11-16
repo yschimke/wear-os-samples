@@ -13,26 +13,26 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
  */
-package com.example.android.wearable.wear.wearnotifications.handlers;
+package com.example.android.wearable.wear.wearnotifications.legacy.handlers;
 
 import android.app.Activity;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.os.Bundle;
 
-import com.example.android.wearable.wear.wearnotifications.MainActivity;
+import com.example.android.wearable.wear.wearnotifications.legacy.MainActivity;
 import com.example.android.wearable.wear.wearnotifications.R;
 
 /**
- * Template class meant to include functionality for your email app. (This project's main focus
+ * Template class meant to include functionality for your Social App. (This project's main focus
  * is on Notification Styles.)
  */
-public class InboxMainActivity extends Activity {
+public class BigPictureSocialMainActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_inbox_main);
+        setContentView(R.layout.activity_big_picture_main);
 
         // Cancel Notification
         NotificationManager notificationManager =
@@ -40,6 +40,6 @@ public class InboxMainActivity extends Activity {
 
         notificationManager.cancel(MainActivity.NOTIFICATION_ID);
 
-        // TODO: Handle and display email from your database
+        // TODO: Handle and display social post from your database
     }
 }

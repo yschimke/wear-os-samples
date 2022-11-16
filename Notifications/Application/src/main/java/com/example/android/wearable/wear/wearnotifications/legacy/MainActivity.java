@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
  */
-package com.example.android.wearable.wear.wearnotifications;
+package com.example.android.wearable.wear.wearnotifications.legacy;
 
 import static android.app.PendingIntent.*;
 import static android.app.PendingIntent.FLAG_IMMUTABLE;
@@ -32,6 +32,8 @@ import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.example.android.wearable.wear.wearnotifications.R;
+import com.example.android.wearable.wear.wearnotifications.navigation.SettingsLauncher;
 import com.google.android.material.snackbar.Snackbar;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -49,13 +51,13 @@ import androidx.core.content.ContextCompat;
 
 import com.example.android.wearable.wear.common.mock.MockDatabase;
 import com.example.android.wearable.wear.common.util.NotificationUtil;
-import com.example.android.wearable.wear.wearnotifications.handlers.BigPictureSocialIntentService;
-import com.example.android.wearable.wear.wearnotifications.handlers.BigPictureSocialMainActivity;
-import com.example.android.wearable.wear.wearnotifications.handlers.BigTextIntentService;
-import com.example.android.wearable.wear.wearnotifications.handlers.BigTextMainActivity;
-import com.example.android.wearable.wear.wearnotifications.handlers.InboxMainActivity;
-import com.example.android.wearable.wear.wearnotifications.handlers.MessagingIntentService;
-import com.example.android.wearable.wear.wearnotifications.handlers.MessagingMainActivity;
+import com.example.android.wearable.wear.wearnotifications.legacy.handlers.BigPictureSocialIntentService;
+import com.example.android.wearable.wear.wearnotifications.legacy.handlers.BigPictureSocialMainActivity;
+import com.example.android.wearable.wear.wearnotifications.legacy.handlers.BigTextIntentService;
+import com.example.android.wearable.wear.wearnotifications.legacy.handlers.BigTextMainActivity;
+import com.example.android.wearable.wear.wearnotifications.legacy.handlers.InboxMainActivity;
+import com.example.android.wearable.wear.wearnotifications.legacy.handlers.MessagingIntentService;
+import com.example.android.wearable.wear.wearnotifications.legacy.handlers.MessagingMainActivity;
 
 /**
  * The Activity demonstrates several popular Notification.Style examples along with their best
@@ -151,7 +153,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                         @Override
                         public void onClick(View view) {
                             // Links to this app's notification settings
-                            openNotificationSettingsForApp();
+                            SettingsLauncher.openNotificationSettingsForApp(MainActivity.this);
                         }
                     });
             snackbar.show();
@@ -868,27 +870,5 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         } catch (SecurityException se) {
             Log.e("MainActivity", "Unable to post notification", se);
         }
-    }
-
-    /**
-     * Helper method for the SnackBar action, i.e., if the user has this application's notifications
-     * disabled, this opens up the dialog to turn them back on after the user requests a
-     * Notification launch.
-     *
-     * IMPORTANT NOTE: You should not do this action unless the user takes an action to see your
-     * Notifications like this sample demonstrates. Spamming users to re-enable your notifications
-     * is a bad idea.
-     */
-    private void openNotificationSettingsForApp() {
-        // Links to this app's notification settings.
-        Intent intent = new Intent();
-        intent.setAction("android.settings.APP_NOTIFICATION_SETTINGS");
-        intent.putExtra("app_package", getPackageName());
-        intent.putExtra("app_uid", getApplicationInfo().uid);
-        
-        // for Android 8 and above
-        intent.putExtra("android.provider.extra.APP_PACKAGE", getPackageName());
-
-        startActivity(intent);
     }
 }

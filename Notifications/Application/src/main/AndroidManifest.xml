@@ -22,64 +22,76 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
+        android:name=".MobileNotificationApplication"
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppThemeOverride">
 
-        <activity android:name=".MainActivity"
+        <activity android:name=".StandaloneComposeActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="notifsample"
+                    android:scheme="notifsample" />
+            </intent-filter>
         </activity>
 
         <activity
-            android:name=".handlers.BigTextMainActivity"
+            android:name=".legacy.handlers.BigTextMainActivity"
             android:excludeFromRecents="true"
             android:label="@string/title_activity_big_text_main"
             android:taskAffinity="">
         </activity>
 
         <activity
-            android:name=".handlers.BigPictureSocialMainActivity"
+            android:name=".legacy.handlers.BigPictureSocialMainActivity"
             android:label="@string/title_activity_big_picture_main">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".MainActivity"/>
+                android:value=".legacy.MainActivity"/>
         </activity>
 
 
         <activity
-            android:name=".handlers.InboxMainActivity"
+            android:name=".legacy.handlers.InboxMainActivity"
             android:label="@string/title_activity_inbox_main">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".MainActivity"/>
+                android:value=".legacy.MainActivity"/>
         </activity>
 
         <activity
-            android:name=".handlers.MessagingMainActivity"
+            android:name=".legacy.handlers.MessagingMainActivity"
             android:label="@string/title_activity_messaging_main">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".MainActivity"/>
+                android:value=".legacy.MainActivity"/>
         </activity>
 
         <service
-            android:name=".handlers.BigTextIntentService"
+            android:name=".legacy.handlers.BigTextIntentService"
             android:exported="false">
         </service>
 
         <service
-            android:name=".handlers.MessagingIntentService"
+            android:name=".legacy.handlers.MessagingIntentService"
             android:exported="false">
         </service>
 
         <service
-            android:name=".handlers.BigPictureSocialIntentService"
+            android:name=".legacy.handlers.BigPictureSocialIntentService"
             android:exported="false">
         </service>
     </application>

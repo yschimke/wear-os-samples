@@ -13,11 +13,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
  */
-package com.example.android.wearable.wear.wearnotifications.handlers;
+package com.example.android.wearable.wear.wearnotifications.legacy.handlers;
 
 import static android.app.PendingIntent.*;
 
-import static com.example.android.wearable.wear.wearnotifications.MainActivity.NOTIFICATION_ID;
+import static com.example.android.wearable.wear.wearnotifications.legacy.MainActivity.NOTIFICATION_ID;
 
 import android.app.IntentService;
 import android.app.Notification;
@@ -39,9 +39,8 @@ import androidx.core.content.ContextCompat;
 
 import com.example.android.wearable.wear.common.mock.MockDatabase;
 import com.example.android.wearable.wear.common.util.NotificationUtil;
-import com.example.android.wearable.wear.wearnotifications.GlobalNotificationBuilder;
-import com.example.android.wearable.wear.wearnotifications.MainActivity;
 import com.example.android.wearable.wear.wearnotifications.R;
+import com.example.android.wearable.wear.wearnotifications.legacy.GlobalNotificationBuilder;
 
 /**
  * Asynchronously handles updating messaging app posts (and active Notification) with replies from

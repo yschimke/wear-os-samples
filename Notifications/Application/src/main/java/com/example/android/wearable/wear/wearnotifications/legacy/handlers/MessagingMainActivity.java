@@ -13,26 +13,28 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
  */
-package com.example.android.wearable.wear.wearnotifications.handlers;
+package com.example.android.wearable.wear.wearnotifications.legacy.handlers;
 
 import android.app.Activity;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.os.Bundle;
 
-import com.example.android.wearable.wear.wearnotifications.MainActivity;
+import com.example.android.wearable.wear.wearnotifications.legacy.MainActivity;
 import com.example.android.wearable.wear.wearnotifications.R;
 
 /**
- * Template class meant to include functionality for your Social App. (This project's main focus
+ * Template class meant to include functionality for your Messaging App. (This project's main focus
  * is on Notification Styles.)
  */
-public class BigPictureSocialMainActivity extends Activity {
+public class MessagingMainActivity extends Activity {
+
+    private static final String TAG = "MessagingMainActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_big_picture_main);
+        setContentView(R.layout.activity_messaging_main);
 
         // Cancel Notification
         NotificationManager notificationManager =
@@ -40,6 +42,9 @@ public class BigPictureSocialMainActivity extends Activity {
 
         notificationManager.cancel(MainActivity.NOTIFICATION_ID);
 
-        // TODO: Handle and display social post from your database
+        // TODO: Handle and display message/conversation from your database
+        // NOTE: You can retrieve the EXTRA_REMOTE_INPUT_DRAFT sent by the system when a user
+        // inadvertently closes a messaging notification to pre-populate the reply text field so
+        // the user can finish their reply.
     }
 }

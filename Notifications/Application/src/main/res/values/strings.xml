@@ -40,4 +40,19 @@
         This Activity would handle the messaging app\'s functionality for a chat(s).
         \n\nThe notification type for this example was the Messaging Style!
     </string>
+    <string name="big_text_chip">
+        Big Text
+    </string>
+    <string name="big_picture_chip">
+        Big Picture
+    </string>
+    <string name="inbox_chip">
+        Inbox
+    </string>
+    <string name="messaging_chip">
+        Messaging
+    </string>
+
+    <string name="floating_text">Notification Style</string>
+    <string name="settings_chip">Settings</string>
 </resources>

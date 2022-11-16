@@ -23,7 +23,7 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context=".handlers.BigPictureSocialMainActivity">
+    tools:context=".legacy.handlers.BigPictureSocialMainActivity">
 
     <TextView
         android:layout_width="wrap_content"
