@@ -1,6 +1,7 @@
 package com.example.android.wearable.wear.wearnotifications
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -11,6 +12,7 @@ import com.example.android.wearable.wear.wearnotifications.handlers.BigPictureMa
 import com.example.android.wearable.wear.wearnotifications.handlers.BigTextMainScreen
 import com.example.android.wearable.wear.wearnotifications.handlers.InboxMainScreen
 import com.example.android.wearable.wear.wearnotifications.handlers.MessagingMainScreen
+import com.example.android.wearable.wear.wearnotifications.main.WearMainScreen
 import com.google.android.horologist.compose.navscaffold.WearNavScaffold
 import com.google.android.horologist.compose.navscaffold.scalingLazyColumnComposable
 import com.google.android.horologist.compose.navscaffold.wearNavComposable
@@ -23,6 +25,7 @@ fun WearNotificationApp(
     bigTextClick: () -> Unit,
     messagingClick: () -> Unit,
     launchSettings: () -> Unit,
+    dismissHandler: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     WearNavScaffold(startDestination = "main", navController = navController) {
@@ -50,19 +53,35 @@ fun WearNotificationApp(
             deepLinks = listOf(navDeepLink {
                 uriPattern = "$DeepLinkPrefix/picture?id={id}"
             })
-        ) { _, _ ->
+        ) { backStackEntry, _ ->
+            val id = backStackEntry.arguments?.getInt("id")
+
             BigPictureMainScreen()
+
+            LaunchedEffect(id) {
+                if (id != null) {
+                    dismissHandler(id)
+                }
+            }
         }
         wearNavComposable(
             route = "text?id={id}",
             arguments = listOf(navArgument("id") {
-                type = NavType.StringType
+                type = NavType.IntType
             }),
             deepLinks = listOf(navDeepLink {
                 uriPattern = "$DeepLinkPrefix/text?id={id}"
             })
-        ) { _, _ ->
+        ) { backStackEntry, _ ->
+            val id = backStackEntry.arguments?.getInt("id")
+
             BigTextMainScreen()
+
+            LaunchedEffect(id) {
+                if (id != null) {
+                    dismissHandler(id)
+                }
+            }
         }
         wearNavComposable(
             route = "inbox?id={id}",
@@ -72,8 +91,16 @@ fun WearNotificationApp(
             deepLinks = listOf(navDeepLink {
                 uriPattern = "$DeepLinkPrefix/inbox?id={id}"
             })
-        ) { _, _ ->
+        ) { backStackEntry, _ ->
+            val id = backStackEntry.arguments?.getInt("id")
+
             InboxMainScreen()
+
+            LaunchedEffect(id) {
+                if (id != null) {
+                    dismissHandler(id)
+                }
+            }
         }
         wearNavComposable(
             route = "messaging?id={id}",
@@ -83,8 +110,16 @@ fun WearNotificationApp(
             deepLinks = listOf(navDeepLink {
                 uriPattern = "$DeepLinkPrefix/messaging?id={id}"
             })
-        ) { _, _ ->
+        ) { backStackEntry, _ ->
+            val id = backStackEntry.arguments?.getInt("id")
+
             MessagingMainScreen()
+
+            LaunchedEffect(id) {
+                if (id != null) {
+                    dismissHandler(id)
+                }
+            }
         }
     }
 }

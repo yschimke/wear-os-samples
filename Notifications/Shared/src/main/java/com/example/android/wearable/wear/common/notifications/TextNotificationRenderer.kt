@@ -1,11 +1,15 @@
 package com.example.android.wearable.wear.common.notifications
 
+import android.annotation.SuppressLint
 import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.example.android.wearable.wear.common.navigation.IntentBuilder
 import com.example.android.wearable.wear.common.mock.MockDatabase
@@ -15,12 +19,32 @@ import com.example.android.wearable.wear.wearnotifications.proto.NotificationsPr
 
 class TextNotificationRenderer(
     context: Context,
-    intentBuilder: IntentBuilder
-) : NotificationRenderer<TextNotification>(context, intentBuilder) {
+    intentBuilder: IntentBuilder,
+    notificationManagerCompat: NotificationManagerCompat
+) : NotificationRenderer<TextNotification>(context, intentBuilder, notificationManagerCompat) {
     override fun createNotificationChannel() {
-        val bigTextStyleReminderAppData = MockDatabase.bigTextStyleData
+        // NotificationChannels are required for Notifications on O (API 26) and above.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // The id of the channel.
 
-        createNotificationChannel(bigTextStyleReminderAppData)
+            // The user-visible name of the channel.
+            val channelName = context.getString(R.string.text_channel_name)
+            // The user-visible description of the channel.
+            val channelDescription = context.getString(R.string.text_channel_description)
+
+            // Initializes NotificationChannel.
+            @SuppressLint("WrongConstant")
+            val notificationChannel =
+                NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_DEFAULT)
+            notificationChannel.description = channelDescription
+            notificationChannel.enableVibration(false)
+            notificationChannel.lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
+
+            // Adds NotificationChannel to system. Attempting to create an existing notification
+            // channel with its original values performs no operation, so it's safe to perform the
+            // below sequence.
+            notificationManagerCompat.createNotificationChannel(notificationChannel)
+        }
     }
 
     override fun createNotification(id: Int, notificationData: TextNotification): Notification {
@@ -33,16 +57,16 @@ class TextNotificationRenderer(
         //      5. Build and issue the notification
 
         // 0. Get your data (everything unique per Notification).
-        val (bigTextStyleReminderAppData, notificationChannelId) = pair()
+        val bigTextStyleReminderAppData = MockDatabase.bigTextStyleData
 
         // 2. Build the BIG_TEXT_STYLE
         val bigTextStyle =
             NotificationCompat.BigTextStyle() // Overrides ContentText in the big form of the template.
-                .bigText(bigTextStyleReminderAppData.bigText) // Overrides ContentTitle in the big form of the template.
-                .setBigContentTitle(bigTextStyleReminderAppData.bigContentTitle) // Summary line after the detail section in the big form of the template
+                .bigText(notificationData.body) // Overrides ContentTitle in the big form of the template.
+                .setBigContentTitle(notificationData.title) // Summary line after the detail section in the big form of the template
                 // Note: To improve readability, don't overload the user with info. If Summary Text
                 // doesn't add critical information, you should skip it.
-                .setSummaryText(bigTextStyleReminderAppData.summaryText)
+                .setSummaryText(notificationData.summary)
 
 
         // 3. Set up main Intent for notification.
@@ -73,9 +97,7 @@ class TextNotificationRenderer(
         // it several seconds later.
 
         // Notification Channel Id is ignored for Android pre O (26).
-        val notificationCompatBuilder = NotificationCompat.Builder(
-            context, notificationChannelId
-        )
+        val notificationCompatBuilder = NotificationCompat.Builder(context, channelId)
         notificationCompatBuilder // BIG_TEXT_STYLE sets title and content.
             .setStyle(bigTextStyle)
             .setContentTitle(bigTextStyleReminderAppData.contentTitle)
@@ -124,12 +146,7 @@ class TextNotificationRenderer(
         return notificationCompatBuilder.build()
     }
 
-    private fun pair(): Pair<MockDatabase.BigTextStyleReminderAppData, String> {
-        val bigTextStyleReminderAppData = MockDatabase.bigTextStyleData
-
-        // 1. Create/Retrieve Notification Channel for O and beyond devices (26+).
-        val notificationChannelId =
-            NotificationUtil.createNotificationChannel(context, bigTextStyleReminderAppData)!!
-        return Pair(bigTextStyleReminderAppData, notificationChannelId)
+    companion object {
+        val channelId = "big_text"
     }
 }

@@ -6,12 +6,14 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
+import androidx.core.app.NotificationManagerCompat
 import com.example.android.wearable.wear.common.navigation.IntentBuilder
 import com.example.android.wearable.wear.common.mock.MockDatabase
 
 abstract class NotificationRenderer<T>(
     val context: Context,
-    val intentBuilder: IntentBuilder
+    val intentBuilder: IntentBuilder,
+    val notificationManagerCompat: NotificationManagerCompat
 ) {
     abstract fun createNotificationChannel()
     abstract fun createNotification(id: Int, notificationData: T): Notification
@@ -43,9 +45,7 @@ abstract class NotificationRenderer<T>(
             // Adds NotificationChannel to system. Attempting to create an existing notification
             // channel with its original values performs no operation, so it's safe to perform the
             // below sequence.
-            val notificationManager =
-                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(notificationChannel)
+            notificationManagerCompat.createNotificationChannel(notificationChannel)
         }
     }
 }

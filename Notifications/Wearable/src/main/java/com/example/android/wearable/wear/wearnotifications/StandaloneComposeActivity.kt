@@ -19,11 +19,14 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.core.app.NotificationCompat
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.wear.ambient.AmbientModeSupport
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
-import com.example.android.wearable.wear.wearnotifications.SettingsLauncher.openNotificationSettingsForApp
+import com.example.android.wearable.wear.wearnotifications.main.MainViewModel
+import com.example.android.wearable.wear.wearnotifications.navigation.SettingsLauncher.openNotificationSettingsForApp
+import kotlinx.coroutines.launch
 
 /**
  * Demonstrates best practice for [NotificationCompat] Notifications created by local
@@ -49,7 +52,14 @@ class StandaloneComposeActivity : FragmentActivity() {
                 inboxClick = { viewModel.generateInboxStyleNotification(this) },
                 bigTextClick = { viewModel.generateBigTextStyleNotification(this) },
                 messagingClick = { viewModel.generateMessagingStyleNotification(this) },
-                launchSettings = { openNotificationSettingsForApp() }
+                launchSettings = { openNotificationSettingsForApp() },
+                dismissHandler = {
+                    lifecycleScope.launch {
+                        (application as WearNotificationApplication).notificationCentre.clearNotification(
+                            it
+                        )
+                    }
+                }
             )
         }
     }

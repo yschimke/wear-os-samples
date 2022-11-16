@@ -14,4 +14,6 @@
 
 <resources>
     <string name="app_name">Shared</string>
+    <string name="text_channel_name">Big Text</string>
+    <string name="text_channel_description">Big Text Notifications</string>
 </resources>

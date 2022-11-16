@@ -22,7 +22,9 @@ option java_package = "com.example.android.wearable.wear.wearnotifications.proto
 option java_outer_classname = "NotificationsProto";
 
 message TextNotification {
-  string text = 1;
+  string title = 1;
+  string body = 2;
+  string summary = 3;
 }
 
 message PostedNotification {

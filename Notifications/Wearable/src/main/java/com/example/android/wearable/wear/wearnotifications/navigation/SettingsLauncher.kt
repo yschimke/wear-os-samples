@@ -1,4 +1,4 @@
-package com.example.android.wearable.wear.wearnotifications
+package com.example.android.wearable.wear.wearnotifications.navigation
 
 import android.content.Context
 import android.content.Intent

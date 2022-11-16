@@ -1,4 +1,4 @@
-package com.example.android.wearable.wear.wearnotifications
+package com.example.android.wearable.wear.wearnotifications.main
 
 import android.app.Activity
 import android.app.Application
@@ -15,9 +15,11 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.android.wearable.wear.common.mock.MockDatabase
 import com.example.android.wearable.wear.common.util.NotificationUtil
+import com.example.android.wearable.wear.wearnotifications.DeepLinkPrefix
+import com.example.android.wearable.wear.wearnotifications.R
+import com.example.android.wearable.wear.wearnotifications.WearNotificationApplication
 import com.example.android.wearable.wear.wearnotifications.handlers.BigPictureSocialIntentService
 import com.example.android.wearable.wear.wearnotifications.handlers.MessagingIntentService
-import com.example.android.wearable.wear.wearnotifications.main.StandaloneMainActivity
 import com.example.android.wearable.wear.wearnotifications.proto.textNotification
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -55,8 +57,10 @@ class MainViewModel(
     fun generateBigTextStyleNotification(activity: Activity) {
         viewModelScope.launch {
             notificationCentre.postTextNotification(textNotification {
-                this.text =
+                title = "Don't forget to..."
+                body =
                     "... feed the dogs before you leave for work, and check the garage to make sure the door is closed."
+                summary = "Dogs and Garage"
             })
 
             // Close app to demonstrate notification in steam.

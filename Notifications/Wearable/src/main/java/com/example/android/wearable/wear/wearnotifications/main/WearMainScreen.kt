@@ -1,4 +1,4 @@
-package com.example.android.wearable.wear.wearnotifications
+package com.example.android.wearable.wear.wearnotifications.main
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
@@ -10,6 +10,7 @@ import androidx.wear.compose.material.ScalingLazyColumn
 import androidx.wear.compose.material.ScalingLazyListState
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.rememberScalingLazyListState
+import com.example.android.wearable.wear.wearnotifications.R
 
 @Composable
 fun WearMainScreen(

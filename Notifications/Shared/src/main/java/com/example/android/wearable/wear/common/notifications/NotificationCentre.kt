@@ -16,7 +16,8 @@ class NotificationCentre(
     val postedNotificationsDataStore: DataStore<PostedNotifications>,
     intentBuilder: IntentBuilder
 ) {
-    val textNotificationRenderer = TextNotificationRenderer(context, intentBuilder)
+    val textNotificationRenderer =
+        TextNotificationRenderer(context, intentBuilder, notificationManager)
 
     fun createChannels() {
         textNotificationRenderer.createNotificationChannel()

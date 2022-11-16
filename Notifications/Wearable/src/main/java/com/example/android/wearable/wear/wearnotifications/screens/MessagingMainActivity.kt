@@ -15,35 +15,18 @@ limitations under the License.
  */
 package com.example.android.wearable.wear.wearnotifications.handlers
 
-import android.app.NotificationManager
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.core.content.ContextCompat
 import androidx.wear.compose.material.Text
 import com.example.android.wearable.wear.wearnotifications.R
-import com.example.android.wearable.wear.wearnotifications.main.StandaloneMainActivity
 import com.google.android.horologist.compose.layout.fillMaxRectangle
 
 @Composable
-public fun BigPictureMainScreen() {
+public fun MessagingMainScreen() {
     Box(modifier = Modifier.fillMaxRectangle(), contentAlignment = Alignment.Center) {
-        Text(text = stringResource(id = R.string.main_text_activity_big_picture_main))
-    }
-
-    val context = LocalContext.current
-    SideEffect {
-        // Cancel Notification
-        val notificationManager = ContextCompat.getSystemService(
-            context,
-            NotificationManager::class.java
-        ) as NotificationManager
-        notificationManager.cancel(StandaloneMainActivity.NOTIFICATION_ID)
-
-        // TODO: Handle and display reminder from your database
+        Text(text = stringResource(id = R.string.main_text_activity_messaging_main))
     }
 }
