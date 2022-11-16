@@ -48,6 +48,8 @@ message PictureNotification {
   string body = 2;
   string summary = 3;
   repeated string comment = 4;
+  repeated string postReplies = 5;
+  repeated Contact participant = 6;
 }
 
 message PostedNotification {

@@ -18,7 +18,7 @@
     <string name="text_channel_description">Big Text Notifications</string>
     <string name="inbox_channel_name">Sample Email</string>
     <string name="inbox_channel_description">Sample Email Notifications</string>
-    <string name="picture_channel_name">s\n</string>
-    <string name="picture_channel_description">s\n</string>
+    <string name="picture_channel_name">Sample Social</string>
+    <string name="picture_channel_description">Sample Social Notifications</string>
     <string name="reply_label">Reply</string>
 </resources>

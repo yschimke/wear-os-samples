@@ -10,7 +10,6 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.app.Person
 import androidx.core.content.ContextCompat
 import com.example.android.wearable.wear.common.navigation.IntentBuilder
 import com.example.android.wearable.wear.wearnotifications.common.R
@@ -36,30 +35,21 @@ class InboxNotificationRenderer(
         }
     }
 
-    override fun buildNotification(id: Int, notificationData: InboxNotification): Notification {
-
-        val inboxStyle =
-            NotificationCompat.InboxStyle()
-                .setBigContentTitle(notificationData.bigContent)
-                .setSummaryText(notificationData.summary)
-
-        // Add each summary line of the new emails, you can add up to 5.
-        for (email in notificationData.emailList.takeLast(5)) {
-            val sender = email.participantList.firstOrNull()?.name ?: "No-one"
-            inboxStyle.addLine("$sender - ${email.summary}")
-        }
-
-        // 3. Set up main Intent for notification.
-        val mainPendingIntent = PendingIntent.getActivity(
-            context,
-            0,
-            intentBuilder.inboxScreenIntent(id),
-            PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        return NotificationCompat.Builder(
+    override fun buildNotification(id: Int, notificationData: InboxNotification): Notification =
+        NotificationCompat.Builder(
             context, channelId
         ).apply {
+            val inboxStyle =
+                NotificationCompat.InboxStyle()
+                    .setBigContentTitle(notificationData.bigContent)
+                    .setSummaryText(notificationData.summary)
+
+            // Add each summary line of the new emails, you can add up to 5.
+            for (email in notificationData.emailList.takeLast(5)) {
+                val sender = email.participantList.firstOrNull()?.name ?: "No-one"
+                inboxStyle.addLine("$sender - ${email.summary}")
+            }
+
             // INBOX_STYLE sets title and content.
             setStyle(inboxStyle)
             setContentTitle(notificationData.title)
@@ -71,7 +61,14 @@ class InboxNotificationRenderer(
                     R.drawable.ic_person_black_48dp
                 )
             )
-            setContentIntent(mainPendingIntent)
+            setContentIntent(
+                PendingIntent.getActivity(
+                    context,
+                    0,
+                    intentBuilder.inboxScreenIntent(id),
+                    PendingIntent.FLAG_UPDATE_CURRENT
+                )
+            )
             setDefaults(NotificationCompat.DEFAULT_ALL)
             // Set primary color (important for Wear 2.0 Notifications).
             color = ContextCompat.getColor(context, R.color.colorPrimary)
@@ -101,5 +98,4 @@ class InboxNotificationRenderer(
 //                )
             }
         }.build()
-    }
 }

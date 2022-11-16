@@ -33,8 +33,8 @@ class TextNotificationRenderer(
         lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
     }
 
-    override fun buildNotification(id: Int, notificationData: TextNotification): Notification {
-        return NotificationCompat.Builder(context, channelId)
+    override fun buildNotification(id: Int, notificationData: TextNotification): Notification =
+        NotificationCompat.Builder(context, channelId)
             .apply {
                 val bigTextStyle =
                     NotificationCompat.BigTextStyle()
@@ -87,5 +87,4 @@ class TextNotificationRenderer(
                 )
             }
             .build()
-    }
 }
