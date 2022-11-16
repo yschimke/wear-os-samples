@@ -33,12 +33,13 @@ fun WearNotificationApp(
             }
         ) {
             WearMainScreen(
-                modifier = modifier,
                 bigPictureClick = bigPictureClick,
                 inboxClick = inboxClick,
                 bigTextClick = bigTextClick,
                 messagingClick = messagingClick,
-                launchSettings = launchSettings
+                launchSettings = launchSettings,
+                modifier = modifier,
+                state = it.scrollableState
             )
         }
         wearNavComposable(

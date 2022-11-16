@@ -7,7 +7,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.wear.compose.material.Chip
 import androidx.wear.compose.material.ListHeader
 import androidx.wear.compose.material.ScalingLazyColumn
+import androidx.wear.compose.material.ScalingLazyListState
 import androidx.wear.compose.material.Text
+import androidx.wear.compose.material.rememberScalingLazyListState
 
 @Composable
 fun WearMainScreen(
@@ -17,8 +19,12 @@ fun WearMainScreen(
     messagingClick: () -> Unit,
     launchSettings: () -> Unit,
     modifier: Modifier = Modifier,
+    state: ScalingLazyListState = rememberScalingLazyListState(),
 ) {
-    ScalingLazyColumn(modifier = modifier) {
+    ScalingLazyColumn(
+        modifier = modifier,
+        state = state,
+    ) {
         item {
             ListHeader {
                 Text(stringResource(id = R.string.floating_text))
