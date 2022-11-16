@@ -1,11 +1,10 @@
-package com.example.android.wearable.wear.common
+package com.example.android.wearable.wear.common.datastore
 
 import android.content.Context
 import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.Serializer
 import androidx.datastore.dataStore
-import com.example.android.wearable.wear.wearnotifications.proto.NotificationsProto
 import com.example.android.wearable.wear.wearnotifications.proto.NotificationsProto.*
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.InputStream

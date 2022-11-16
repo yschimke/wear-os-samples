@@ -1,4 +1,4 @@
-package com.example.android.wearable.wear.common
+package com.example.android.wearable.wear.common.notifications
 
 import android.annotation.SuppressLint
 import android.app.Notification
@@ -6,6 +6,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
+import com.example.android.wearable.wear.common.navigation.IntentBuilder
 import com.example.android.wearable.wear.common.mock.MockDatabase
 
 abstract class NotificationRenderer<T>(

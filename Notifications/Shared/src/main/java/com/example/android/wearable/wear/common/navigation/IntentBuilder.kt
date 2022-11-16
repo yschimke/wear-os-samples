@@ -1,4 +1,4 @@
-package com.example.android.wearable.wear.common
+package com.example.android.wearable.wear.common.navigation
 
 import android.content.Intent
 

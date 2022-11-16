@@ -1,4 +1,4 @@
-package com.example.android.wearable.wear.common
+package com.example.android.wearable.wear.common.notifications
 
 import android.app.Notification
 import android.app.PendingIntent
@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import com.example.android.wearable.wear.common.navigation.IntentBuilder
 import com.example.android.wearable.wear.common.mock.MockDatabase
 import com.example.android.wearable.wear.common.util.NotificationUtil
 import com.example.android.wearable.wear.wearnotifications.common.R

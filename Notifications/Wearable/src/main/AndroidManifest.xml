@@ -70,7 +70,7 @@
         </activity>
 
         <service
-            android:name="com.example.android.wearable.wear.common.CoreNotificationActionsService"
+            android:name="com.example.android.wearable.wear.common.notifications.CoreNotificationActionsService"
             android:exported="false"></service>
 
         <service

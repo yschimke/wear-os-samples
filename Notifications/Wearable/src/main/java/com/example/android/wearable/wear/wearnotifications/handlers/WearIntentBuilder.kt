@@ -3,8 +3,8 @@ package com.example.android.wearable.wear.wearnotifications.handlers
 import android.content.Context
 import android.content.Intent
 import androidx.core.net.toUri
-import com.example.android.wearable.wear.common.CoreNotificationActionsService
-import com.example.android.wearable.wear.common.IntentBuilder
+import com.example.android.wearable.wear.common.notifications.CoreNotificationActionsService
+import com.example.android.wearable.wear.common.navigation.IntentBuilder
 import com.example.android.wearable.wear.wearnotifications.DeepLinkPrefix
 
 class WearIntentBuilder(

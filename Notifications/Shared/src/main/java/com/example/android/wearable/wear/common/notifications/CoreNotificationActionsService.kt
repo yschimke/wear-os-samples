@@ -13,13 +13,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
  */
-package com.example.android.wearable.wear.common
+package com.example.android.wearable.wear.common.notifications
 
 import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
+import com.example.android.wearable.wear.common.components.SampleNotificationApplication
 import kotlinx.coroutines.runBlocking
 
 /**

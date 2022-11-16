@@ -1,8 +1,11 @@
-package com.example.android.wearable.wear.common
+package com.example.android.wearable.wear.common.components
 
 import android.app.Application
 import androidx.core.app.NotificationManagerCompat
 import androidx.datastore.core.DataStore
+import com.example.android.wearable.wear.common.datastore.postedNotificationsStore
+import com.example.android.wearable.wear.common.navigation.IntentBuilder
+import com.example.android.wearable.wear.common.notifications.NotificationCentre
 import com.example.android.wearable.wear.wearnotifications.proto.NotificationsProto
 
 abstract class SampleNotificationApplication: Application() {

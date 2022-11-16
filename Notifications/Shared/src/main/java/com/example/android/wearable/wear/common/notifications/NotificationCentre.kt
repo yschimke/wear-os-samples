@@ -1,16 +1,14 @@
-package com.example.android.wearable.wear.common
+package com.example.android.wearable.wear.common.notifications
 
 import android.app.Notification
-import android.app.Service
 import android.content.Context
 import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import androidx.datastore.core.DataStore
+import com.example.android.wearable.wear.common.navigation.IntentBuilder
 import com.example.android.wearable.wear.wearnotifications.proto.NotificationsProto.PostedNotifications
 import com.example.android.wearable.wear.wearnotifications.proto.NotificationsProto.TextNotification
 import com.example.android.wearable.wear.wearnotifications.proto.postedNotification
-import java.util.UUID
-import java.util.concurrent.TimeUnit
 
 class NotificationCentre(
     val context: Context,

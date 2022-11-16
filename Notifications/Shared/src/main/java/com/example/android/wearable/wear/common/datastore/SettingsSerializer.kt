@@ -1,4 +1,4 @@
-package com.example.android.wearable.wear.common
+package com.example.android.wearable.wear.common.datastore
 
 import android.content.Context
 import androidx.datastore.core.CorruptionException
