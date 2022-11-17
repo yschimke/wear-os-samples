@@ -66,7 +66,7 @@ class InboxNotificationRenderer(
                     context,
                     0,
                     intentBuilder.inboxScreenIntent(id),
-                    PendingIntent.FLAG_UPDATE_CURRENT
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
                 )
             )
             setDefaults(NotificationCompat.DEFAULT_ALL)

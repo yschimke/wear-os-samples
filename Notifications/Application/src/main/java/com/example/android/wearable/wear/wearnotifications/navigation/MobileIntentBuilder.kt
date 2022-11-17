@@ -22,20 +22,28 @@ class MobileIntentBuilder(
     override fun textScreenIntent(id: Int): Intent = Intent(
         Intent.ACTION_VIEW,
         "$DeepLinkPrefix/text?id=$id".toUri()
-    )
+    ).apply {
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+    }
 
     override fun inboxScreenIntent(id: Int): Intent = Intent(
         Intent.ACTION_VIEW,
         "$DeepLinkPrefix/inbox?id=$id".toUri()
-    )
+    ).apply {
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+    }
 
     override fun pictureScreenIntent(id: Int): Intent = Intent(
         Intent.ACTION_VIEW,
         "$DeepLinkPrefix/picture?id=$id".toUri()
-    )
+    ).apply {
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+    }
 
     override fun pictureReplyIntent(id: Int): Intent =
-        Intent(context, BigPictureSocialIntentService::class.java).apply {
+        Intent(
+            context, BigPictureSocialIntentService::class.java
+        ).apply {
             action = NotificationReplyService.ACTION_REPLY
             putExtra(CoreNotificationActionsService.EXTRA_NOTIFICATION_ID, id)
         }
@@ -43,7 +51,9 @@ class MobileIntentBuilder(
     override fun messagingScreenIntent(id: Int): Intent = Intent(
         Intent.ACTION_VIEW,
         "$DeepLinkPrefix/messaging?id=$id".toUri()
-    )
+    ).apply {
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+    }
 
     override fun messagingReplyIntent(id: Int): Intent =
         Intent(context, MessagingIntentService::class.java).apply {

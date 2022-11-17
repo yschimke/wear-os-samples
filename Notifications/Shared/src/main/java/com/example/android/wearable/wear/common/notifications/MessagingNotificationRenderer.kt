@@ -66,7 +66,7 @@ class MessagingNotificationRenderer(
                     context,
                     0,
                     intentBuilder.messagingReplyIntent(id),
-                    PendingIntent.FLAG_UPDATE_CURRENT
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
                 )
             )
                 .addRemoteInput(

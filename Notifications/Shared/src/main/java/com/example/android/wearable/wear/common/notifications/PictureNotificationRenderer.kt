@@ -81,7 +81,7 @@ class PictureNotificationRenderer(
                         context,
                         0,
                         intentBuilder.pictureReplyIntent(id),
-                        PendingIntent.FLAG_UPDATE_CURRENT
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
                     )
                 )
                     .addRemoteInput(
