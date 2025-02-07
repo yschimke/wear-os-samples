@@ -12,6 +12,8 @@ robolectric = "4.14.1"
 roborazzi = "1.40.1"
 ui-test-junit4 = "1.7.7"
 ui-test-manifest = "1.7.7"
+lifecycleViewmodel = "2.9.0-SNAPSHOT"
+navigation3 = "0.1.0-SNAPSHOT"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
@@ -40,6 +42,9 @@ test-ext-junit = "androidx.test.ext:junit:1.2.1"
 wear-compose-foundation = { module = "androidx.wear.compose:compose-foundation", version.ref = "androidx-wear-compose" }
 wear-compose-material = { module = "androidx.wear.compose:compose-material", version.ref = "androidx-wear-compose" }
 wear-compose-navigation = { module = "androidx.wear.compose:compose-navigation", version.ref = "androidx-wear-compose" }
+androidx-lifecycle-viewmodel-navigation3 = { module = "androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "lifecycleViewmodel" }
+androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycleViewmodel" }
+androidx-navigation3 = { module = "androidx.navigation3:navigation3", version.ref = "navigation3" }
 
 [plugins]
 com-android-application = { id = "com.android.application", version.ref = "android-gradle-plugin" }

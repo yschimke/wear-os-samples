@@ -31,12 +31,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.navigation3.NavEntry
+import androidx.navigation3.SinglePaneNavDisplay
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.rememberActiveFocusRequester
 import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults.behavior
@@ -51,6 +54,7 @@ import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 import androidx.wear.compose.ui.tooling.preview.WearPreviewFontScales
 import com.example.android.wearable.composestarter.R
+import com.example.android.wearable.composestarter.presentation.Routes.Menu
 import com.example.android.wearable.composestarter.presentation.theme.WearAppTheme
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.compose.layout.AppScaffold
@@ -86,23 +90,34 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+sealed interface Routes {
+    data object Menu : Routes
+    data object AList : Routes
+}
+
 @Composable
 fun WearApp() {
-    val navController = rememberSwipeDismissableNavController()
+    val backstack = remember { mutableStateListOf<Routes>(Menu) }
 
     WearAppTheme {
         AppScaffold {
-            SwipeDismissableNavHost(navController = navController, startDestination = "menu") {
-                composable("menu") {
-                    GreetingScreen(
-                        "Android",
-                        onShowList = { navController.navigate("list") }
-                    )
+            SinglePaneNavDisplay<Routes>(
+                backstack = backstack,
+                onBack = { backstack.removeLastOrNull() },
+                entryProvider = { key ->
+                    when (key) {
+                        is Menu -> NavEntry(key) {
+                            GreetingScreen(
+                                "Android",
+                                onShowList = { backstack.add(Routes.AList) }
+                            )
+                        }
+                        is Routes.AList -> NavEntry(key) {
+                            ListScreen()
+                        }
+                    }
                 }
-                composable("list") {
-                    ListScreen()
-                }
-            }
+            )
         }
     }
 }

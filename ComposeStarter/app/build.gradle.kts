@@ -17,6 +17,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     alias(libs.plugins.roborazzi)
+    id("kotlin-parcelize")
 }
 
 android {
@@ -106,6 +107,10 @@ dependencies {
     implementation(libs.wear.compose.navigation)
 
     implementation(libs.androidx.ui.test.manifest)
+
+    implementation(libs.androidx.navigation3)
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
 
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
