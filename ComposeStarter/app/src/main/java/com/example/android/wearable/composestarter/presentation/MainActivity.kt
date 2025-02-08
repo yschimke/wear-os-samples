@@ -20,7 +20,6 @@ package com.example.android.wearable.composestarter.presentation
 import android.os.Bundle
 import android.os.Parcelable
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -35,26 +34,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.listSaver
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.navigation3.NavBackStackProvider
 import androidx.navigation3.NavEntry
-import androidx.navigation3.NavLocalProvider
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
-import androidx.wear.compose.foundation.HierarchicalFocusCoordinator
-import androidx.wear.compose.foundation.SwipeToDismissKeys
 import androidx.wear.compose.foundation.rememberActiveFocusRequester
-import androidx.wear.compose.foundation.rememberSwipeToDismissBoxState
 import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults.behavior
 import androidx.wear.compose.foundation.rotary.rotaryScrollable
 import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.SwipeToDismissBox
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TitleCard
 import androidx.wear.compose.material.dialog.Dialog
@@ -62,6 +51,8 @@ import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 import androidx.wear.compose.ui.tooling.preview.WearPreviewFontScales
 import com.example.android.wearable.composestarter.R
 import com.example.android.wearable.composestarter.presentation.Routes.Menu
+import com.example.android.wearable.composestarter.presentation.nav3.WearNavDisplay
+import com.example.android.wearable.composestarter.presentation.nav3.rememberSaveableMutableStateListOf
 import com.example.android.wearable.composestarter.presentation.theme.WearAppTheme
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.compose.layout.AppScaffold
@@ -107,47 +98,6 @@ sealed interface Routes : Parcelable {
 }
 
 @Composable
-fun <T : Any> rememberSaveableMutableStateListOf(vararg elements: T): SnapshotStateList<T> {
-    return rememberSaveable(saver = snapshotStateListSaver()) {
-        elements.toList().toMutableStateList()
-    }
-}
-
-private fun <T : Any> snapshotStateListSaver() = listSaver<SnapshotStateList<T>, T>(
-    save = { stateList -> stateList.toList() },
-    restore = { it.toMutableStateList() },
-)
-
-@Composable
-fun <T : Any> WearNavDisplay(
-    backstack: MutableList<T>,
-    modifier: Modifier = Modifier,
-    localProviders: List<NavLocalProvider> = emptyList(),
-    onBack: () -> Unit = { backstack.removeAt(backstack.size - 1) },
-    entryProvider: (key: T) -> NavEntry<out T>
-) {
-    BackHandler(backstack.size > 1, onBack)
-    NavBackStackProvider<T>(backstack, entryProvider, localProviders) { entries ->
-        val active = entries.last()
-        val background = if (entries.size > 1) entries[entries.size - 2] else null
-
-        SwipeToDismissBox(
-            onDismissed = onBack,
-            state = rememberSwipeToDismissBoxState(),
-            modifier = modifier,
-            backgroundKey = background?.key ?: SwipeToDismissKeys.Background,
-            hasBackground = background != null,
-            contentKey = active.key,
-        ) { isBackground ->
-            val child = if (isBackground) requireNotNull(background) else active
-            HierarchicalFocusCoordinator(requiresFocus = { !isBackground }) {
-                child.content.invoke(child.key)
-            }
-        }
-    }
-}
-
-@Composable
 fun WearApp() {
     val backstack = rememberSaveableMutableStateListOf<Routes>(Menu)
 
@@ -166,7 +116,7 @@ fun WearApp() {
                         }
 
                         is Routes.AList -> NavEntry(key) {
-                            ListScreen()
+                            ListScreen(onBack = { backstack.removeLastOrNull() })
                         }
                     }
                 }
@@ -206,7 +156,7 @@ fun GreetingScreen(greetingName: String, onShowList: () -> Unit) {
 }
 
 @Composable
-fun ListScreen() {
+fun ListScreen(onBack: () -> Unit = {}) {
     var showDialog by remember { mutableStateOf(false) }
 
     /*
@@ -233,6 +183,9 @@ fun ListScreen() {
                 ResponsiveListHeader(contentPadding = firstItemPadding()) {
                     Text(text = "Header")
                 }
+            }
+            item {
+                Chip(label = "Go Back", onClick = onBack)
             }
             item {
                 TitleCard(title = { Text("Example Title") }, onClick = { }) {

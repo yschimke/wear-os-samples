@@ -3,6 +3,7 @@ android-gradle-plugin = "8.8.0"
 androidx-activity = "1.10.0"
 androidx-compose-bom = "2025.01.01"
 androidx-wear-compose = "1.4.0"
+collectionKtx = "1.4.5"
 compose-compiler = "1.5.15"
 compose-ui-tooling = "1.4.0"
 horologist = "0.7.5-alpha"
@@ -17,6 +18,7 @@ navigation3 = "0.1.0-SNAPSHOT"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
+androidx-collection-ktx = { module = "androidx.collection:collection-ktx", version.ref = "collectionKtx" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "androidx-compose-bom" }
 androidx-compose-ui-tooling = { module = "androidx.wear.compose:compose-ui-tooling", version.ref = "compose-ui-tooling" }
 androidx-material-icons-core = { module = "androidx.compose.material:material-icons-core" }
