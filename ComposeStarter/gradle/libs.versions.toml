@@ -2,7 +2,7 @@
 android-gradle-plugin = "8.8.0"
 androidx-activity = "1.10.0"
 androidx-compose-bom = "2025.01.01"
-androidx-wear-compose = "1.4.0"
+androidx-wear-compose = "1.5.0-alpha09"
 compose-compiler = "1.5.15"
 compose-ui-tooling = "1.4.0"
 horologist = "0.7.5-alpha"

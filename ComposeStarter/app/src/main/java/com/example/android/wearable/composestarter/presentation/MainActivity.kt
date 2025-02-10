@@ -37,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.wear.compose.foundation.ActiveFocusListener
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.rememberActiveFocusRequester
 import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults.behavior
@@ -111,6 +112,10 @@ fun WearApp() {
 fun GreetingScreen(greetingName: String, onShowList: () -> Unit) {
     val scrollState = rememberScrollState()
 
+    ActiveFocusListener { active ->
+        println("GreetingScreen $active")
+    }
+
     /* If you have enough items in your list, use [ScalingLazyColumn] which is an optimized
      * version of LazyColumn for wear devices with some added features. For more information,
      * see d.android.com/wear/compose.
@@ -139,6 +144,10 @@ fun GreetingScreen(greetingName: String, onShowList: () -> Unit) {
 
 @Composable
 fun ListScreen() {
+    ActiveFocusListener { active ->
+        println("ListScreen $active")
+    }
+
     var showDialog by remember { mutableStateOf(false) }
 
     /*
