@@ -65,6 +65,9 @@ dependencies {
     // Coil for asynchronous image loading
     implementation(libs.coil)
     implementation(libs.coil.okhttp)
+    implementation(libs.androidx.lifecycle.runtime)
+    implementation(libs.androidx.savedstate)
+    implementation(libs.androidx.lifecycle.process)
 
     // Java 8+ API desugaring
     coreLibraryDesugaring(libs.desugar.jdk.libs)

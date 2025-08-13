@@ -7,13 +7,18 @@ androidx-wear-tiles = "1.5.0"
 androidx-wear-protolayout = "1.3.0"
 coil = "3.3.0"
 horologist = "0.7.12-alpha"
+lifecycle-runtime = "2.9.2"
 org-jetbrains-kotlin = "2.1.21"
+savedstate = "1.3.1"
 wear-tooling-preview = "1.0.0"
 desugar-jdk = "2.1.5"
 
 [libraries]
 # AndroidX Wear & Compose
 androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "compose" }
+androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycle-runtime" }
+androidx-lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime", version.ref = "lifecycle-runtime" }
+androidx-savedstate = { module = "androidx.savedstate:savedstate", version.ref = "savedstate" }
 androidx-wear-protolayout-material = { module = "androidx.wear.protolayout:protolayout-material", version.ref = "androidx-wear-protolayout" }
 androidx-wear-protolayout-material3 = { module = "androidx.wear.protolayout:protolayout-material3", version.ref = "androidx-wear-protolayout" }
 androidx-wear-tiles = { module = "androidx.wear.tiles:tiles", version.ref = "androidx-wear-tiles" }

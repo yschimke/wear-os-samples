@@ -42,5 +42,21 @@
                 android:resource="@drawable/tile_messaging" />
         </service>
 
+        <service
+            android:name="com.example.wear.tiles.compose.ComposableService"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:description="@string/app_name"
+            android:icon="@mipmap/bolt"
+            android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
+            <intent-filter>
+                <action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" />
+            </intent-filter>
+
+            <meta-data
+                android:name="androidx.wear.tiles.PREVIEW"
+                android:resource="@mipmap/bolt" />
+        </service>
+
     </application>
 </manifest>
