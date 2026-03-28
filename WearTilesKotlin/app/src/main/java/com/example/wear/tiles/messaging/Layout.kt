@@ -80,28 +80,21 @@ fun MaterialScope.contactButton(contact: Contact): LayoutElement {
     }
 }
 
-fun tileLayout(
-    context: Context,
-    deviceParameters: DeviceParameters,
+fun MaterialScope.tileLayout(
     contacts: List<Contact>
 ): LayoutElement {
-    return materialScope(
-        context = context,
-        deviceConfiguration = deviceParameters,
-        allowDynamicTheme = true
-    ) {
-        val visibleContacts = contacts.take(if (isLargeScreen()) 6 else 4)
+    val visibleContacts = contacts.take(if (isLargeScreen()) 6 else 4)
 
-        val (row1, row2) =
-            visibleContacts.chunked(if (visibleContacts.size > 4) 3 else 2).let { chunkedList ->
-                Pair(
-                    chunkedList.getOrElse(0) { emptyList() },
-                    chunkedList.getOrElse(1) { emptyList() }
-                )
-            }
+    val (row1, row2) =
+        visibleContacts.chunked(if (visibleContacts.size > 4) 3 else 2).let { chunkedList ->
+            Pair(
+                chunkedList.getOrElse(0) { emptyList() },
+                chunkedList.getOrElse(1) { emptyList() }
+            )
+        }
 
-        primaryLayout(
-            titleSlot =
+    return primaryLayout(
+        titleSlot =
             // Only display the title if there's one row, otherwise the touch targets become
             // too small (less than 48dp). See
             // https://developer.android.com/training/wearables/accessibility#set-minimum
@@ -110,30 +103,29 @@ fun tileLayout(
             } else {
                 null
             },
-            mainSlot = {
-                column {
-                    setWidth(expand())
-                    setHeight(expand())
-                    addContent(
-                        buttonGroup { row1.forEach { buttonGroupItem { contactButton(it) } } }
-                    )
-                    if (!row2.isEmpty()) {
-                        addContent(DEFAULT_SPACER_BETWEEN_BUTTON_GROUPS)
-                        addContent(
-                            buttonGroup { row2.forEach { buttonGroupItem { contactButton(it) } } }
-                        )
-                    }
-                }
-            },
-            bottomSlot = {
-                textEdgeButton(
-                    onClick = clickable(),
-                    labelContent = { text("More".layoutString) },
-                    colors = filledTonalButtonColors()
+        mainSlot = {
+            column {
+                setWidth(expand())
+                setHeight(expand())
+                addContent(
+                    buttonGroup { row1.forEach { buttonGroupItem { contactButton(it) } } }
                 )
+                if (!row2.isEmpty()) {
+                    addContent(DEFAULT_SPACER_BETWEEN_BUTTON_GROUPS)
+                    addContent(
+                        buttonGroup { row2.forEach { buttonGroupItem { contactButton(it) } } }
+                    )
+                }
             }
-        )
-    }
+        },
+        bottomSlot = {
+            textEdgeButton(
+                onClick = clickable(),
+                labelContent = { text("More".layoutString) },
+                colors = filledTonalButtonColors()
+            )
+        }
+    )
 }
 
 /** Returns a set of [ButtonColors] based on the provided index [n]. */
@@ -184,7 +176,13 @@ internal fun socialPreviewN(context: Context, n: Int): TilePreviewData {
         }
     ) {
         TilePreviewHelper.singleTimelineEntryTileBuilder(
-            tileLayout(context, it.deviceConfiguration, contacts)
+            materialScope(
+                context = context,
+                deviceConfiguration = it.deviceConfiguration,
+                allowDynamicTheme = true
+            ) {
+                tileLayout(contacts)
+            }
         )
             .build()
     }

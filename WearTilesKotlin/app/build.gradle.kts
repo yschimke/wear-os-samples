@@ -16,7 +16,6 @@
 
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
@@ -46,12 +45,6 @@ android {
         isCoreLibraryDesugaringEnabled = true
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.majorVersion
-        freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
-        freeCompilerArgs += "-opt-in=com.google.android.horologist.annotations.ExperimentalHorologistApi"
-    }
-
     buildFeatures {
         compose = true
     }
@@ -59,6 +52,9 @@ android {
 }
 
 dependencies {
+    // Compose BOM for version management
+    implementation(platform(libs.androidx.compose.bom))
+
     // Horologist provides helpful wrappers for Tiles development
     implementation(libs.horologist.tiles)
 
@@ -75,7 +71,7 @@ dependencies {
     implementation(libs.androidx.wear.protolayout.material3)
 
     // Tooling dependencies for previewing tiles in Android Studio.
-    implementation(libs.androidx.tiles.tooling)
+    debugImplementation(libs.androidx.wear.tiles.tooling)
     debugImplementation(libs.androidx.wear.tiles.renderer)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.wear.tooling.preview)
