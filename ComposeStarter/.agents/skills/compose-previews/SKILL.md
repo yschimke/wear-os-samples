@@ -88,6 +88,12 @@ cli/bin/preview-cli show --project <path> --filter <FunctionName> --json-files
 cli/bin/preview-cli show --project <path> --filter <FunctionName> --variant 0 --json-files
 ```
 
+all paths are relative to the .agents/skills/compose-previews directory. Don't specify the project, just use the default target `app` if it matches. Typically just
+
+```
+.agents/skills/compose-previews/cli/bin/preview-cli show --json-files
+```
+
 Read the `file` path from the JSON output to view the rendered PNG.
 
 ## Multi-Preview Annotations
@@ -100,7 +106,7 @@ Use `variantIndex` (0-based) with `renderPreview` to select a specific variant.
 
 ## Setting Up the Gradle Plugin
 
-The target Android project needs the `ee.schimke.composepreview.plugin` Gradle plugin applied. This plugin registers a `collectPreviewInfo` task that writes classpath, manifest, resource, and R.jar paths needed by the renderer.
+The target Android project needs the `ee.schimke.composepreview.plugin` Gradle plugin applied. This plugin registers a task that writes classpath, manifest, resource, and R.jar paths needed by the renderer. Agents don't ever need to run this, but they do need to apply the plugin.
 
 ### settings.gradle
 
@@ -130,24 +136,6 @@ plugins {
 }
 ```
 
-### Requirements
-
-The target app must have these dependencies (typically already present in Compose projects):
-
-```kotlin
-testImplementation("org.robolectric:robolectric:4.16.1")
-```
-
-### What the plugin does
-
-The plugin registers a `collectPreviewInfo` Gradle task that:
-1. Resolves `debugUnitTestRuntimeClasspath` to find all dependency JARs
-2. Scans the build directory for compiled class directories (debug + debugUnitTest)
-3. Locates the merged AndroidManifest.xml, resource APK, and R.jar
-4. Writes all paths to `app/build/preview/project-info.txt`
-
-This file is read by the CLI and MCP server to set up the Robolectric renderer classpath.
-
 ## Design Guidance
 
 When creating or iterating on Wear OS designs, refer to the **[Wear UI Guide](./WEAR_UI.md)** for:
@@ -159,9 +147,10 @@ When creating or iterating on Wear OS designs, refer to the **[Wear UI Guide](./
 ## Tips
 
 - First render ~3-5s (harness startup). Subsequent renders ~100-200ms.
-- The server uses `--auto-watch` by default — previews auto-update on file changes.
 - Resource changes (.xml, .json) are detected and trigger recompilation + re-render.
 - Always visually verify after making UI changes. Don't assume the change looks correct.
 - When talking about a screen, at minimum show the user the preview also. 
 - Maybe show previous versions to compare. And show something before and after you make changes.
 - use a border occasionally if you want to highlight something to the user. or a box with a canvas, and draw something on top.
+- Generally focus on iterating on a single preview variant, such as small_round and 1x font scale. 
+- Then follow up with fixes for other sizes and font scales.

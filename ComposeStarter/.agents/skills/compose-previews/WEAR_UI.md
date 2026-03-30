@@ -30,6 +30,8 @@ To build for Wear OS using Material 3, use the following **androidx.wear.compose
 > [!IMPORTANT]
 > Do **not** include a dependency on `androidx.compose.material:material` or `androidx.wear.compose:compose-material`. Material 3 for Wear OS (`compose-material3`) is designed as a standalone replacement.
 
+> Use https://github.com/androidx/androidx for searching AndroidX code. 
+
 ### App-Specific UX Principles
 - **Focused**: Help users complete critical tasks within seconds.
 - **Shallow and Linear**: Avoid hierarchies deeper than two levels; display content and navigation inline when possible.
@@ -56,13 +58,22 @@ Use a hierarchical scaffolding approach to manage system UI (TimeText, Scroll In
 - **`ScreenScaffold`**: Used for individual screens. Manages the `scrollState` and provides a slot for `EdgeButton`.
 - **`SwipeDismissableNavHost`**: Essential for the "back" gesture (swipe-to-dismiss).
 
+ScreenScaffold has a contentPadding lambda parameter that *MUST* be used in the content.
+
 ### 2. Scrolling & Lists
 The preferred list component in M3 Expressive is **`TransformingLazyColumn`** (which succeeds `ScalingLazyColumn`).
 - **State Management**: Use `rememberTransformingLazyColumnState()`.
 - **Visual Effects**: Apply `rememberTransformationSpec()` and `SurfaceTransformation` to items to enable expressive shape-morphing and scaling as they scroll.
 - **Dynamic Height**: Use `Modifier.transformedHeight` within items to ensure they scale correctly.
-- **Vertical Content Spacing**: Avoid using Horologist for list padding. Instead, use **`Modifier.minimumVerticalContentPadding`** on individual items.
-    - Pair this with specific defaults like `CardDefaults.minimumVerticalListContentPadding`, `ButtonDefaults.minimumVerticalListContentPadding`, or `TextButtonDefaults.minimumVerticalListContentPadding` to ensure correct spacing relative to screen edges and other items.
+- **Vertical Content Spacing**: Avoid using Horologist for list padding. Instead, use **`Modifier.minimumVerticalContentPadding()`** on individual items within a `TransformingLazyColumn`.
+    - **Package**: `androidx.wear.compose.foundation.lazy`
+    - **Scope**: Only available within `TransformingLazyColumnItemScope`. No explicit import is needed if called inside the scope.
+    - **Usage**: Pair this with specific defaults if needed, like `CardDefaults.minimumVerticalListContentPadding` or `ListHeaderDefaults.minimumTopListContentPadding`.
+
+- **Auto-scaling Text**: For labels that may overflow in fixed containers (like `EdgeButton`), use **`BasicText`** with the `autoSize` parameter.
+    - **Package**: `androidx.compose.foundation.text.BasicText`
+    - **Auto-size Package**: `androidx.compose.foundation.text.TextAutoSize`
+    - **Implementation**: Uses `TextAutoSize.StepBased()` to automatically adjust font size to fit constraints.
 
 ### 3. Key Components
 - **`EdgeButton`**: A hallmark M3 pattern for round devices. It hugs the bottom edge of the screen and is the ideal place for the primary CTA.

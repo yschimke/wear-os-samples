@@ -79,6 +79,7 @@ dependencies {
     // General compose dependencies
     implementation(composeBom)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.foundation)
 
     // Compose for Wear OS Dependencies
     // NOTE: DO NOT INCLUDE a dependency on androidx.compose.material:material.
