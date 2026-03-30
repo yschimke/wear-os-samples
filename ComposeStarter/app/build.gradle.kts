@@ -19,6 +19,7 @@ plugins {
     id("com.android.application")
     alias(libs.plugins.roborazzi)
     alias(libs.plugins.compose.compiler)
+    id("ee.schimke.composepreview.plugin") version "0.1.0"
 }
 
 android {

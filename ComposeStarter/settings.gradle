@@ -15,6 +15,13 @@
  */
 pluginManagement {
     repositories {
+        maven {
+            url = uri("https://maven.pkg.github.com/yschimke/precognition")
+            credentials {
+                username = "yschimke"
+                password = "FROM_YURI"
+            }
+        }
         gradlePluginPortal()
         google()
         mavenCentral()

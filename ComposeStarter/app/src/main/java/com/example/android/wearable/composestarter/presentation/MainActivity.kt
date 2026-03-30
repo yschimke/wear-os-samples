@@ -319,7 +319,7 @@ fun SampleDialog(
 @WearPreviewFontScales
 @Composable
 fun GreetingScreenPreview() {
-    GreetingScreen("Preview Android", onShowList = {})
+    GreetingScreen("Ashley Ingram", onShowList = {})
 }
 
 @WearPreviewDevices

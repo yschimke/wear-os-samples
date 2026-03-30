@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "compose-preview": {
+      "command": "./server/bin/preview-mcp-server",
+      "args": ["--auto-watch"]
+    }
+  }
+}
