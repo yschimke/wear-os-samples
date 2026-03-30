@@ -79,13 +79,13 @@ If the MCP server isn't running, use the CLI directly:
 
 ```bash
 # Render all previews
-preview-cli/build/install/preview-cli/bin/preview-cli show --project <path> --json-files
+cli/bin/preview-cli show --project <path> --json-files
 
 # Render specific function
-preview-cli/build/install/preview-cli/bin/preview-cli show --project <path> --filter <FunctionName> --json-files
+cli/bin/preview-cli show --project <path> --filter <FunctionName> --json-files
 
 # Render single variant
-preview-cli/build/install/preview-cli/bin/preview-cli show --project <path> --filter <FunctionName> --variant 0 --json-files
+cli/bin/preview-cli show --project <path> --filter <FunctionName> --variant 0 --json-files
 ```
 
 Read the `file` path from the JSON output to view the rendered PNG.
