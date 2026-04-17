@@ -14,12 +14,6 @@
  * limitations under the License.
  */
 
-buildscript {
-    dependencies {
-        classpath(libs.kotlin.gradle.plugin)
-    }
-}
-
 plugins {
     alias(libs.plugins.com.diffplug.spotless) apply(false)
     alias(libs.plugins.com.android.application) apply(false)
@@ -29,6 +23,7 @@ plugins {
 subprojects {
     apply(plugin = "com.diffplug.spotless")
     configure<com.diffplug.gradle.spotless.SpotlessExtension> {
+        ratchetFrom = "origin/main"
         kotlin {
             target("**/*.kt")
             val buildDir = layout.buildDirectory.get().asFile
