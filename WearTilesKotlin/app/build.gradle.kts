@@ -19,10 +19,17 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("ee.schimke.composeai.preview") version "0.7.3"
+}
+
+composePreview {
+    variant.set("debug")
+    sdkVersion.set(35)
+    enabled.set(true)
 }
 
 android {
-    compileSdk = 35
+    compileSdk = 37
 
     namespace = "com.example.wear.tiles"
 
@@ -49,6 +56,10 @@ android {
 
     buildFeatures {
         compose = true
+    }
+
+    lint {
+        disable += "RestrictedApi"
     }
 
 }
@@ -87,4 +98,11 @@ dependencies {
     // androidx.wear.tiles:tiles-tooling-preview dependency available to release builds, not
     // just debug builds.
     implementation(libs.androidx.wear.tiles.tooling.preview)
+
+    // Remote Compose
+    implementation(libs.androidx.compose.remote.tooling.preview)
+    implementation(libs.androidx.compose.remote.creation)
+    implementation(libs.androidx.compose.remote.creation.compose)
+    implementation(libs.androidx.wear.compose.remote.material3)
+    implementation(libs.androidx.compose.material.icons.core)
 }

@@ -10,6 +10,8 @@ horologist = "0.7.12-alpha"
 org-jetbrains-kotlin = "2.3.20"
 wear-tooling-preview = "1.0.0"
 desugar-jdk = "2.1.5"
+compose-remote = "1.0.0-alpha07"
+wear-compose-remote = "1.0.0-alpha02"
 
 [libraries]
 # AndroidX Wear & Compose
@@ -22,6 +24,11 @@ androidx-wear-tiles-renderer = { module = "androidx.wear.tiles:tiles-renderer", 
 androidx-wear-tiles-tooling = { module = "androidx.wear.tiles:tiles-tooling", version.ref = "androidx-wear-tiles" }
 androidx-wear-tiles-tooling-preview = { module = "androidx.wear.tiles:tiles-tooling-preview", version.ref = "androidx-wear-tiles" }
 androidx-wear-tooling-preview = { module = "androidx.wear:wear-tooling-preview", version.ref = "wear-tooling-preview" }
+androidx-compose-remote-tooling-preview = { module = "androidx.compose.remote:remote-tooling-preview", version.ref = "compose-remote" }
+androidx-compose-remote-creation = { module = "androidx.compose.remote:remote-creation", version.ref = "compose-remote" }
+androidx-compose-remote-creation-compose = { module = "androidx.compose.remote:remote-creation-compose", version.ref = "compose-remote" }
+androidx-wear-compose-remote-material3 = { module = "androidx.wear.compose.remote:remote-material3", version.ref = "wear-compose-remote" }
+androidx-compose-material-icons-core = { module = "androidx.compose.material:material-icons-core", version = "1.7.0" }
 
 # Coil (Image Loading)
 coil = { module = "io.coil-kt.coil3:coil", version.ref = "coil" }
