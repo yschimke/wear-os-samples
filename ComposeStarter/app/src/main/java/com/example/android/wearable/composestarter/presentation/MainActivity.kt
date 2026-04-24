@@ -18,18 +18,30 @@ package com.example.android.wearable.composestarter.presentation
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -59,6 +71,7 @@ import androidx.wear.compose.material3.lazy.transformedHeight
 import androidx.wear.compose.navigation3.rememberSwipeDismissableSceneStrategy
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 import androidx.wear.compose.ui.tooling.preview.WearPreviewFontScales
+import java.time.LocalTime
 import com.example.android.wearable.composestarter.R
 import com.example.android.wearable.composestarter.presentation.theme.AppCardDefaults
 import com.example.android.wearable.composestarter.presentation.theme.WearAppTheme
@@ -129,42 +142,28 @@ fun WearApp() {
 fun GreetingScreen(
     greetingName: String,
     onShowList: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    timeOfDay: TimeOfDay = rememberTimeOfDay()
 ) {
-    val scrollState = rememberTransformingLazyColumnState()
-
-    /* If you have enough items in your list, use [TransformingLazyColumn] which is an optimized
-     * version of LazyColumn for wear devices with some added features. For more information,
-     * see d.android.com/wear/compose.
-     */
-    ScreenScaffold(
-        scrollState = scrollState,
-        edgeButton = {
-            EdgeButton(
-                onClick = onShowList,
-                buttonSize = EdgeButtonSize.ExtraSmall
-            ) {
-                Text(stringResource(R.string.show_list))
-            }
-            // The `ScreenScaffold` parameter `edgeButtonSpacing` can be used to specify the
-            // gap between edgeButton and content.
-        }
-    ) { contentPadding ->
-        TransformingLazyColumn(
-            state = scrollState,
-            contentPadding = contentPadding
+    Box(modifier = modifier.fillMaxSize()) {
+        Greeting(
+            greetingName = greetingName,
+            timeOfDay = timeOfDay,
+            modifier =
+                Modifier
+                    .align(Alignment.Center)
+                    .fillMaxWidth()
+                    .padding(top = 36.dp, bottom = 72.dp)
+        )
+        EdgeButton(
+            onClick = onShowList,
+            buttonSize = EdgeButtonSize.Medium,
+            modifier = Modifier.align(Alignment.BottomCenter)
         ) {
-            item {
-                Greeting(
-                    greetingName = greetingName,
-                    modifier =
-                        modifier
-                            .fillMaxSize()
-                            .minimumVerticalContentPadding(
-                                ListHeaderDefaults.minimumTopListContentPadding
-                            )
-                )
-            }
+            Text(
+                text = stringResource(R.string.show_list),
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
@@ -289,16 +288,75 @@ fun ListScreen(modifier: Modifier = Modifier) {
 @Composable
 fun Greeting(
     greetingName: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    timeOfDay: TimeOfDay = rememberTimeOfDay()
 ) {
-    ListHeader {
+    val colorScheme = MaterialTheme.colorScheme
+    val heroBrush =
+        Brush.linearGradient(
+            colors = listOf(colorScheme.primary, colorScheme.tertiary)
+        )
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically)
+    ) {
+        Canvas(modifier = Modifier.size(width = 48.dp, height = 22.dp)) {
+            val strokeWidth = 4.dp.toPx()
+            val inset = strokeWidth / 2f
+            drawArc(
+                brush = heroBrush,
+                startAngle = 180f,
+                sweepAngle = 180f,
+                useCenter = false,
+                topLeft = androidx.compose.ui.geometry.Offset(inset, inset),
+                size =
+                    androidx.compose.ui.geometry.Size(
+                        size.width - strokeWidth,
+                        (size.height - strokeWidth) * 2f
+                    ),
+                style =
+                    androidx.compose.ui.graphics.drawscope.Stroke(
+                        width = strokeWidth,
+                        cap = StrokeCap.Round
+                    )
+            )
+        }
         Text(
-            modifier = modifier.fillMaxWidth(),
+            text = timeOfDay.label,
+            color = colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            modifier = Modifier.fillMaxWidth(),
+            text = greetingName,
+            color = colorScheme.primary,
+            style = MaterialTheme.typography.displaySmall,
+            fontWeight = FontWeight.Black,
             textAlign = TextAlign.Center,
-            text = stringResource(R.string.hello_world, greetingName)
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
+
+enum class TimeOfDay(val label: String) {
+    Morning("Good morning"),
+    Day("Hello"),
+    Evening("Good evening")
+}
+
+@Composable
+fun rememberTimeOfDay(): TimeOfDay =
+    remember {
+        when (LocalTime.now().hour) {
+            in 5..11 -> TimeOfDay.Morning
+            in 12..17 -> TimeOfDay.Day
+            else -> TimeOfDay.Evening
+        }
+    }
 
 @Composable
 fun SampleDialog(
@@ -340,7 +398,15 @@ fun SampleDialog(
 @WearPreviewFontScales
 @Composable
 fun GreetingScreenPreview() {
-    GreetingScreen("Preview Android", onShowList = {})
+    WearAppTheme {
+        AppScaffold {
+            GreetingScreen(
+                greetingName = "Alex",
+                onShowList = {},
+                timeOfDay = TimeOfDay.Morning
+            )
+        }
+    }
 }
 
 @WearPreviewDevices
