@@ -29,7 +29,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.googlefonts.Font
+import androidx.compose.ui.text.googlefonts.GoogleFont
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.sp
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -59,6 +66,8 @@ import androidx.wear.compose.material3.lazy.transformedHeight
 import androidx.wear.compose.navigation3.rememberSwipeDismissableSceneStrategy
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 import androidx.wear.compose.ui.tooling.preview.WearPreviewFontScales
+import ee.schimke.composeai.preview.ScrollMode
+import ee.schimke.composeai.preview.ScrollingPreview
 import com.example.android.wearable.composestarter.R
 import com.example.android.wearable.composestarter.presentation.theme.AppCardDefaults
 import com.example.android.wearable.composestarter.presentation.theme.WearAppTheme
@@ -286,18 +295,37 @@ fun ListScreen(modifier: Modifier = Modifier) {
     )
 }
 
+val provider = GoogleFont.Provider(
+    providerAuthority = "com.google.android.gms.fonts",
+    providerPackage = "com.google.android.gms",
+    certificates = R.array.com_google_android_gms_fonts_certs
+)
+
+val robotoFlex = FontFamily(
+    Font(
+        googleFont = GoogleFont("Roboto Flex"),
+        fontProvider = provider,
+        weight = FontWeight.W900
+    )
+)
+
 @Composable
 fun Greeting(
     greetingName: String,
     modifier: Modifier = Modifier
 ) {
-    ListHeader {
-        Text(
-            modifier = modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center,
-            text = stringResource(R.string.hello_world, greetingName)
-        )
-    }
+    Text(
+        modifier = modifier.fillMaxWidth(),
+        textAlign = TextAlign.Center,
+        style = MaterialTheme.typography.displayLarge.copy(
+            fontFamily = robotoFlex,
+            lineHeight = 40.sp,
+            brush = Brush.linearGradient(
+                colors = listOf(Color(0xFF8AB4F8), Color(0xFFF28B82))
+            )
+        ),
+        text = stringResource(R.string.hello_world, greetingName)
+    )
 }
 
 @Composable
@@ -345,6 +373,7 @@ fun GreetingScreenPreview() {
 
 @WearPreviewDevices
 @WearPreviewFontScales
+@ScrollingPreview(modes = [ScrollMode.LONG, ScrollMode.TOP, ScrollMode.GIF])
 @Composable
 fun ListScreenPreview() {
     ListScreen()
