@@ -20,6 +20,7 @@ plugins {
     alias(libs.plugins.roborazzi)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.compose.preview)
 }
 
 android {
@@ -72,6 +73,12 @@ android {
     }
 }
 
+composePreview {
+    variant.set("debug")
+    sdkVersion.set(35)
+    enabled.set(true)
+}
+
 dependencies {
 
     val composeBom = platform(libs.androidx.compose.bom)
@@ -93,8 +100,10 @@ dependencies {
     implementation(libs.androidx.material.icons.core)
 
     // Preview Tooling
+    implementation("androidx.compose.ui:ui-text-google-fonts:1.11.0")
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.ui.tooling)
+    implementation(libs.compose.preview.annotations)
 
     // If you are using Compose Navigation, use the Wear OS version (NOT the
     // androidx.navigation:navigation-compose version), that is, uncomment the line below.
