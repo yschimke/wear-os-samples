@@ -20,10 +20,11 @@ plugins {
     alias(libs.plugins.roborazzi)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlin.serialization)
+    id("ee.schimke.composeai.preview") version "0.9.3"
 }
 
 android {
-    compileSdk = 36
+    compileSdk = 37
 
     namespace = "com.example.android.wearable.composestarter"
 
@@ -68,6 +69,15 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
+    sourceSets {
+        getByName("main") {
+            java.directories.add("src/samples/java")
+            kotlin {
+                directories.add("src/samples/java")
+            }
+            res.directories.add("src/samples/res")
         }
     }
 }
