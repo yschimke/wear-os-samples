@@ -1,0 +1,18 @@
+diff --git a/res/drawable/gs_category_search_wght500rond100_vd_theme_24.xml b/res/drawable/gs_category_search_wght500rond100_vd_theme_24.xml
+--- a/res/drawable/gs_category_search_wght500rond100_vd_theme_24.xml
++++ b/res/drawable/gs_category_search_wght500rond100_vd_theme_24.xml
+@@ -5,1 +5,1 @@
+-    android:tint="?attr/colorControlNormal">
++    android:tint="@android:color/white">
+diff --git a/res/drawable/gs_map_wght500rond100_vd_theme_24.xml b/res/drawable/gs_map_wght500rond100_vd_theme_24.xml
+--- a/res/drawable/gs_map_wght500rond100_vd_theme_24.xml
++++ b/res/drawable/gs_map_wght500rond100_vd_theme_24.xml
+@@ -21,1 +21,1 @@
+-    android:tint="?attr/colorControlNormal">
++    android:tint="@android:color/white">
+diff --git a/res/drawable/gs_work_wght500rond100_vd_theme_24.xml b/res/drawable/gs_work_wght500rond100_vd_theme_24.xml
+--- a/res/drawable/gs_work_wght500rond100_vd_theme_24.xml
++++ b/res/drawable/gs_work_wght500rond100_vd_theme_24.xml
+@@ -5,1 +5,1 @@
+-    android:tint="?attr/colorControlNormal">
++    android:tint="@android:color/white">

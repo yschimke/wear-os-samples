@@ -1,10 +1,10 @@
 [versions]
-android-gradle-plugin = "9.1.0"
+android-gradle-plugin = "9.2.1"
 androidx-activity = "1.13.0"
 androidx-compose-bom = "2026.03.01"
-androidx-wear-compose-material3 = "1.6.0"
-androidx-wear-compose = "1.6.0"
-compose-ui-tooling = "1.6.0"
+androidx-wear-compose-material3 = "1.7.0-alpha01"
+androidx-wear-compose = "1.7.0-alpha01"
+compose-ui-tooling = "1.7.0-alpha01"
 
 ktlint = "1.4.0"
 org-jetbrains-kotlin = "2.3.20"
