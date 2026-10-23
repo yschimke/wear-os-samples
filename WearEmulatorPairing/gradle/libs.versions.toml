@@ -1,0 +1,14 @@
+[versions]
+kotlin = "2.3.21"
+adblib = "9.4.1"
+coroutines = "1.10.2"
+serialization = "1.9.0"
+
+[libraries]
+adblib = { module = "com.android.tools.adblib:adblib", version.ref = "adblib" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

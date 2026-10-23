@@ -1,0 +1,14 @@
+# Google account for `wear-pair pair --test-account` / `wear-pair sign-in`.
+# Copy to ~/.config/wear-pair/test-account.properties and `chmod 600` it.
+#
+# The tool signs in by driving the normal Android "Add account" screens (Android CLI `android layout` + `adb shell input`),
+# so use a dedicated test account WITHOUT 2-step verification. If Google shows a challenge, you'll be asked to finish it
+# on the emulator screen.
+
+# One line: email:password (the password may contain ':', but not a single quote).
+# Env override: WEAR_PAIR_TESTACCOUNT
+testaccount=your.testaccount@gmail.com:password123
+
+# Or keep the password out of this file:
+#email=your.testaccount@gmail.com
+#password.command=pass show android/wear-test-account
