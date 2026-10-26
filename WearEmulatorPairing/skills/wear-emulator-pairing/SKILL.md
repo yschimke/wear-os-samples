@@ -64,9 +64,10 @@ Do these before a test session so that pairing later needs no one present:
 - **Watches can't sign in on their own.** Wear OS copies the account from the paired phone ("Open on phone" on the
   watch, then "Continue as …" on the phone). `$WP sign-in <watchSerial>` automates this: it finds the paired phone,
   checks that the phone has the account, and drives both screens. What we've found on emulators:
-  - **Use a recent signed watch image:** Wear OS 7 (`system-images;android-37.0;android-wear-signed;x86_64`, Google Play
-    services 26.x) works. Older watch images (API 34 / API 36, Play services 24.x/25.x) fail during the transfer.
-    Pair it with a **Google Play** phone image (`user/release-keys`).
+  - **Use a recent signed watch image:** Wear OS 7 (`system-images;android-37.0;android-wear-signed;<abi>`, `arm64-v8a` on
+    Apple silicon or `x86_64`, Google Play services 26.x) works. Older watch images (API 34 / API 36, Play services
+    24.x/25.x) fail during the transfer. Pair it with a **Google Play** phone image (`user/release-keys`, e.g.
+    `system-images;android-37.0;google_apis_playstore;<abi>`).
   - Both devices need a **screen lock**, or the copy fails silently. On emulators with no lock, the tool sets PIN `1234`
     (`locksettings set-pin`); the phone then asks "Verify it's you" for that PIN and the tool types it.
   - With a PIN set, a rebooted emulator stays **locked**, and Google Play services and the companion app don't run

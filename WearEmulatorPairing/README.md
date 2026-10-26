@@ -49,6 +49,7 @@ number shown) and waits up to 20 minutes.
 without a screen lock get PIN `1234`, which the copy requires.
 
 Other flags:
+- `--phone-image <pkg>` / `--watch-image <pkg>`: choose specific installed images for `create` (or substrings, e.g. `android-35`).
 - `--accept-terms`: accept the companion's Terms of Service with all optional boxes unchecked. Only use it with the
   account owner's consent.
 - `--wipe-watch`
