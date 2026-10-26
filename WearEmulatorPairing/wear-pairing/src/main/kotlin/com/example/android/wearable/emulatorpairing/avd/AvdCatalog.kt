@@ -99,7 +99,8 @@ public class AvdCatalog(public val locations: SdkLocations = SdkLocations.detect
     if (!root.isDirectory()) return emptyList()
     return root.listDirectoryEntries().filter { it.isDirectory() }.flatMap { platform ->
       platform.listDirectoryEntries().filter { it.isDirectory() }.flatMap { tag ->
-        tag.listDirectoryEntries().filter { it.isDirectory() }.map { abiDir -> readSystemImage(platform.name, tag.name, abiDir) }
+        tag.listDirectoryEntries().filter { it.isDirectory() && it.resolve("system.img").exists() } // skip partial installs
+          .map { abiDir -> readSystemImage(platform.name, tag.name, abiDir) }
       }
     }
   }
@@ -179,7 +180,8 @@ public class AvdCatalog(public val locations: SdkLocations = SdkLocations.detect
         "hw.lcd.height=$h",
         "hw.lcd.width=$w",
         "hw.ramSize=${if (wear) 2048 else 4096}",
-        "disk.dataPartition.size=8G",
+        // Phones need room for Play Store installs; watches don't.
+        "disk.dataPartition.size=${if (wear) "2G" else "8G"}",
         "image.sysdir.1=$sysdir",
         "tag.id=${image.tagIds.first()}",
         "tag.ids=${image.tagIds.joinToString(",")}",

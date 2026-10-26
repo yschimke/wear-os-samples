@@ -44,6 +44,10 @@ Companion sources (tried in order):
 If Google asks to verify a sign-in, the tool explains what's needed (for example, approve on your phone and tap the
 number shown) and waits up to 20 minutes.
 
+`sign-in <watch>` copies the paired phone's Google account to the watch. It needs a recent signed watch image (Wear OS 7,
+`android-37.0;android-wear-signed`) and a Google Play phone image; older watch images fail the transfer. Emulators
+without a screen lock get PIN `1234`, which the copy requires.
+
 Other flags:
 - `--accept-terms`: accept the companion's Terms of Service with all optional boxes unchecked. Only use it with the
   account owner's consent.

@@ -15,9 +15,11 @@
  */
 package com.example.android.wearable.emulatorpairing.companion
 
+import com.android.adblib.DeviceState
 import com.example.android.wearable.emulatorpairing.AdbDevice
 import com.example.android.wearable.emulatorpairing.PairingLogger
 import com.example.android.wearable.emulatorpairing.getPairingStatus
+import com.example.android.wearable.emulatorpairing.loadNodeID
 import com.example.android.wearable.emulatorpairing.tools.AndroidTools
 import com.example.android.wearable.emulatorpairing.tools.AndroidUi
 import com.example.android.wearable.emulatorpairing.tools.UiNode
@@ -94,6 +96,9 @@ public interface SignInHelper {
     }
   }
 }
+
+/** Screen-lock PIN set on emulators that have none (account copy to a watch requires a screen lock). */
+public const val EMULATOR_PIN: String = "1234"
 
 /** How long the person has to complete a verification challenge. */
 public val USER_VERIFICATION_WINDOW: Duration = 20.minutes
@@ -281,44 +286,79 @@ public class GoogleSignIn(private val tools: AndroidTools = AndroidTools(), priv
   }
 
   /**
-   * Wear OS can't sign in on its own: Settings > Accounts > Add Google Account says "copy it from your phone". So this only works when
-   * the watch is connected to a phone that has the account and a real companion app; it taps "Open on phone" and waits for the person
-   * to approve on the phone.
+   * Wear OS can't sign in on its own: Settings > Accounts > Add Google Account copies the account from the paired phone.
+   * This drives that flow end to end on emulators: it sets a screen lock (PIN [EMULATOR_PIN]) on emulators without one (the copy
+   * fails silently without it), taps "Open on phone" on the watch, then on the phone picks the account ("Continue as …") and
+   * enters the PIN at "Verify it's you".
+   *
+   * Tested working with a Wear OS 7 (API 37) signed watch image; older watch images (Play services 24.x/25.x) fail during the
+   * transfer.
    */
   private suspend fun signInWatch(watch: AdbDevice, account: TestAccount, ui: AndroidUi, helper: SignInHelper): String? {
     val notReady =
-      "A watch can't sign in by itself: Wear OS copies the account from its paired phone. First pair it in companion mode " +
-        "(`wear-pair pair --companion-apk ...`), sign the phone in (`wear-pair sign-in <phone>`), then run `wear-pair sign-in ${watch.serialNumber}`."
-    if (watch.getPairingStatus().peers.none { it.connected && it.enabled }) return notReady
+      "A watch can't sign in by itself: Wear OS copies the account from its paired phone. First pair it " +
+        "(`wear-pair pair ...`), sign the phone in (`wear-pair sign-in <phone>`), then run `wear-pair sign-in ${watch.serialNumber}`."
+    val watchPeers = watch.getPairingStatus().peers.filter { it.connected && it.enabled }.mapNotNull { it.nodeId?.lowercase() }
+    if (watchPeers.isEmpty()) return notReady
+    val phone =
+      watch.session.hostServices.devices().filter { it.deviceState == DeviceState.ONLINE && it.serialNumber != watch.serialNumber }
+        .map { AdbDevice(watch.session, it.serialNumber) }
+        .firstOrNull { p -> p.loadNodeID().lowercase() in watchPeers } ?: return notReady
+    if (!hasAccount(phone, account.email)) return "${phone.serialNumber} isn't signed in to ${account.email}; run `wear-pair sign-in ${phone.serialNumber}` first"
+    for (d in listOf(phone, watch)) {
+      if (d.isEmulator() && d.shell("dumpsys lock_settings | grep -m1 CredentialType").contains("NONE")) {
+        d.shell("locksettings set-pin $EMULATOR_PIN")
+        helper.notify("Set screen-lock PIN $EMULATOR_PIN on ${d.serialNumber} (needed to copy an account to the watch)")
+      }
+    }
+    for (d in listOf(phone, watch)) {
+      if (d.isEmulator() && !d.unlockWithPin(EMULATOR_PIN)) return "${d.serialNumber} is locked; unlock it and try again"
+    }
+    val phoneUi = AndroidUi(tools, phone)
 
+    // Emulated watches report "charging", and Wear OS then shows a full-screen charging UI over everything.
+    if (watch.isEmulator()) watch.shell("dumpsys battery unplug")
     watch.shell("svc power stayon true; input keyevent 224; wm dismiss-keyguard")
     watch.shell("am start -a android.settings.ADD_ACCOUNT_SETTINGS --esa account_types com.google")
-    var prompted = false
+    var openedOnPhone = false
     val deadline = TimeSource.Monotonic.markNow() + USER_VERIFICATION_WINDOW
     while (deadline.hasNotPassedNow()) {
       if (hasAccount(watch, account.email)) {
         logger.info("${account.email} is on ${watch.serialNumber}")
+        if (watch.isEmulator()) watch.shell("dumpsys battery reset; svc power stayon false")
         return null
       }
       val nodes = ui.nodes()
       val add = nodes.firstOrNull { it.clickable && it.labelIs("Add Google Account", "Add account") }
       val openOnPhone = nodes.firstOrNull { it.resourceId == "top_container" || (it.clickable && it.label?.contains("Open on phone", ignoreCase = true) == true) }
       when {
-        add != null -> ui.tap(add)
-        openOnPhone != null && !prompted -> {
+        !openedOnPhone && add != null -> ui.tap(add)
+        !openedOnPhone && openOnPhone != null -> {
           ui.tap(openOnPhone)
-          prompted = true
-          helper.notify(
-            "On the paired phone, approve copying ${account.email} to the watch (check the companion app's notification). " +
-              "You have ${USER_VERIFICATION_WINDOW.inWholeMinutes} minutes; this continues automatically."
-          )
+          openedOnPhone = true
+          logger.info("Opened the account copy on ${phone.serialNumber}")
         }
-        nodes.any { it.label?.contains("phone", ignoreCase = true) == true && it.label.contains("app", ignoreCase = true) } && !prompted ->
-          return "The watch says the phone needs the companion app for account transfer. $notReady"
+      }
+      if (openedOnPhone) {
+        val p = phoneUi.nodes()
+        val pick = p.firstOrNull { it.label?.startsWith("Continue as") == true } ?: p.firstOrNull { it.label?.trim() == account.email && it.clickable }
+        when {
+          p.any { it.label?.contains("Verify it", ignoreCase = true) == true || it.label?.contains("Unlock to continue", ignoreCase = true) == true } -> {
+            logger.info("Entering the phone's PIN")
+            phoneUi.type(EMULATOR_PIN)
+            phoneUi.enter()
+          }
+          pick != null -> {
+            logger.info("Choosing ${account.email} on ${phone.serialNumber}")
+            phoneUi.tap(pick)
+          }
+          p.any { it.resourceId == "aerr_wait" } -> phoneUi.tap(p.first { it.resourceId == "aerr_wait" })
+        }
       }
       delay(3_000)
     }
-    return "${account.email} wasn't copied to ${watch.serialNumber} within ${USER_VERIFICATION_WINDOW.inWholeMinutes} minutes"
+    return "${account.email} wasn't copied to ${watch.serialNumber} within ${USER_VERIFICATION_WINDOW.inWholeMinutes} minutes. " +
+      "Account copy needs a recent watch image (tested: Wear OS 7 / API 37 signed); older images fail during the transfer."
   }
 
   private suspend fun hasAccount(device: AdbDevice, email: String) = device.shell("dumpsys account").contains("name=$email,")

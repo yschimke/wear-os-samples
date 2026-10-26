@@ -22,6 +22,7 @@ import com.android.adblib.SocketSpec
 import com.android.adblib.shellAsLines
 import com.android.adblib.shellAsText
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
@@ -64,6 +65,37 @@ public class AdbDevice(public val session: AdbSession, public val serialNumber: 
   public suspend fun avdName(): String? = getProperty("ro.boot.qemu.avd_name") ?: getProperty("ro.kernel.qemu.avd_name")
 
   public suspend fun isBootCompleted(): Boolean = getProperty("sys.boot_completed") == "1" || getProperty("dev.bootcomplete") != null
+
+  /**
+   * True while the current user is locked, e.g. after a reboot with a screen lock set. Until it is unlocked, Google Play
+   * services and the companion app don't run, so pairing and the Wearable connection can't start.
+   */
+  public suspend fun isLocked(): Boolean = Regex("""\(current\).*deviceLocked=1""").containsMatchIn(shell("dumpsys trust"))
+
+  /** Unlocks the device if it is locked with PIN [pin]. Returns true if the device ends up unlocked. */
+  public suspend fun unlockWithPin(pin: String): Boolean {
+    if (!isLocked()) return true
+    if (!shell("dumpsys lock_settings | grep -m1 CredentialType").contains("PIN")) return false
+    // One shell call, so the PIN screen can't time out between steps on a slow host.
+    shell("input keyevent KEYCODE_WAKEUP; wm dismiss-keyguard; sleep 1; input text $pin; input keyevent KEYCODE_ENTER")
+    if (waitUnlocked()) return true
+    // Some lock screens (e.g. Wear OS's PIN pad) ignore typed text; tap the digit buttons instead.
+    shell("input keyevent KEYCODE_WAKEUP; wm dismiss-keyguard; sleep 1")
+    val dump = shell("uiautomator dump /data/local/tmp/wp_lock.xml >/dev/null && cat /data/local/tmp/wp_lock.xml")
+    val keys = Regex("""text="(\d)"[^>]*?bounds="\[(\d+),(\d+)]\[(\d+),(\d+)]"""").findAll(dump)
+      .associate { m -> val (d, l, t, r, b) = m.destructured; d to "${(l.toInt() + r.toInt()) / 2} ${(t.toInt() + b.toInt()) / 2}" }
+    if (pin.any { it.toString() !in keys }) return false
+    shell(pin.toList().joinToString("; ") { "input tap ${keys.getValue(it.toString())}" } + "; input keyevent KEYCODE_ENTER")
+    return waitUnlocked()
+  }
+
+  private suspend fun waitUnlocked(): Boolean {
+    repeat(10) {
+      if (!isLocked()) return true
+      delay(1_000)
+    }
+    return false
+  }
 
   public suspend fun uptimeSeconds(): Double = shell("cat /proc/uptime").split(' ').firstOrNull()?.toDoubleOrNull() ?: 0.0
 

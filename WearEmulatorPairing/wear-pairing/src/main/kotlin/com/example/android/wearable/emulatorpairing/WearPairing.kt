@@ -22,6 +22,7 @@ import com.example.android.wearable.emulatorpairing.avd.AvdCatalog
 import com.example.android.wearable.emulatorpairing.companion.CompanionInstallEvent
 import com.example.android.wearable.emulatorpairing.companion.CompanionInstaller
 import com.example.android.wearable.emulatorpairing.companion.CompanionSource
+import com.example.android.wearable.emulatorpairing.companion.EMULATOR_PIN
 import com.example.android.wearable.emulatorpairing.companion.describe
 import com.example.android.wearable.emulatorpairing.tools.AndroidTools
 import com.example.android.wearable.emulatorpairing.tools.EmulatorControl
@@ -511,8 +512,18 @@ public class WearPairing(
     if (restartWatchGmsCore) watch.refreshEmulatorConnection(logger)
   }
 
-  private suspend fun waitForBoot(device: AdbDevice): Boolean =
-    waitForCondition(options.bootTimeout.inWholeMilliseconds, pollMillis = 2_000) { device.isBootCompleted() }
+  private suspend fun waitForBoot(device: AdbDevice): Boolean {
+    if (!waitForCondition(options.bootTimeout.inWholeMilliseconds, pollMillis = 2_000) { device.isBootCompleted() }) return false
+    // `sign-in <watch>` sets a PIN on emulators; after a reboot nothing Wear-related starts until it is entered.
+    if (device.isEmulator() && device.isLocked()) {
+      if (device.unlockWithPin(EMULATOR_PIN)) {
+        logger.info("Unlocked ${device.serialNumber} with PIN $EMULATOR_PIN")
+      } else {
+        logger.warn("${device.serialNumber} is locked; unlock it. Google Play services and the companion app don't run until then")
+      }
+    }
+    return true
+  }
 
   private suspend fun AdbDevice.waitForGmsCore() {
     val timeout = options.gmsCoreReadyTimeout.inWholeMilliseconds

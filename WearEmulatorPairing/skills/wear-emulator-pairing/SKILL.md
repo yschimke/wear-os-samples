@@ -56,21 +56,30 @@ run it unsandboxed.
 ## Preparing ahead of time
 
 Do these before a test session so that pairing later needs no one present:
-- `$WP sign-in [phoneSerial]` signs the configured test account in on a phone.
+- `$WP sign-in [phoneSerial]` signs the configured test account in on a phone. Run it on a paired watch to copy the
+  phone's account to the watch (see below).
 - `$WP install-companion [phoneSerial] --companion-apk <apk|dir>` (or `--companion-from`, `--test-account`,
   `--play`) installs the companion app without a watch. It uses the online watch's companion if there is one,
   otherwise `--package <id>`, defaulting to the Pixel Watch app.
 - **Watches can't sign in on their own.** Wear OS copies the account from the paired phone ("Open on phone" on the
-  watch, then "Continue as …" on the phone). What we've found on emulators:
-  - Both devices need a **screen lock**, or the copy fails silently. Set one with `adb -s <serial> shell locksettings set-pin 1234`;
-    the phone then asks "Verify it's you" for that PIN.
-  - The copy then uses Google's device-to-device (FIDO) transfer. On current emulator images it fails when both sides try to
-    register a device key (`GLSUser … Device key file not found` / `AppCertManager … response code 400` in logcat). So **the
-    watch ends up without the account**, even though the phone shows success.
+  watch, then "Continue as …" on the phone). `$WP sign-in <watchSerial>` automates this: it finds the paired phone,
+  checks that the phone has the account, and drives both screens. What we've found on emulators:
+  - **Use a recent signed watch image:** Wear OS 7 (`system-images;android-37.0;android-wear-signed;x86_64`, Google Play
+    services 26.x) works. Older watch images (API 34 / API 36, Play services 24.x/25.x) fail during the transfer.
+    Pair it with a **Google Play** phone image (`user/release-keys`).
+  - Both devices need a **screen lock**, or the copy fails silently. On emulators with no lock, the tool sets PIN `1234`
+    (`locksettings set-pin`); the phone then asks "Verify it's you" for that PIN and the tool types it.
+  - With a PIN set, a rebooted emulator stays **locked**, and Google Play services and the companion app don't run
+    until it's unlocked (pairing then stalls at "isn't listening on 5601"). `pair`, `keep` and `sign-in` unlock
+    emulators with PIN `1234` automatically; for anything else, unlock them first.
+  - The tool unplugs the watch's emulated charger during the copy, because Wear OS's full-screen charging UI
+    covers the flow, and restores it afterwards.
+  - `GLSUser … Device key file not found` / `AppCertManager … end-group tag did not match` in logcat is noise; the copy
+    succeeds on Wear OS 7 despite it.
   - The "Associate with the watch" card in the Pixel Watch app isn't supported for emulators (`WearCDM: CDM association not
     supported for watch emulator`); ignore it.
-  - Most phone/watch flows (Data Layer, messages, the companion's own account) don't need an account on the watch. Treat watch
-    sign-in as unsupported on emulators for now.
+  - Most phone/watch flows (Data Layer, messages, the companion's own account) don't need an account on the watch. You need
+    it for Play Store on the watch, Google sign-in / Credential Manager on the watch, and Google apps on the watch.
 
 ## Getting the companion app onto the phone
 
