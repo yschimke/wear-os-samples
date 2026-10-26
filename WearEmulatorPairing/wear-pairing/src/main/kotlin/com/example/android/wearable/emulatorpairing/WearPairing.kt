@@ -83,6 +83,9 @@ public sealed interface PairingProgress {
   /** The watch was paired with another phone and is being wiped + cold-booted. */
   public data class WipingWatch(val serial: String) : PairingProgress
 
+  /** The watch's emulator transport needs a reboot before it accepts a phone (e.g. after its Play services data was cleared). */
+  public data class RebootingWatch(val serial: String) : PairingProgress
+
   public data class Bridged(val hostPort: Int) : PairingProgress
 
   /** Non-interactive pairing state from the companion app; [CompanionPairingState.CONSENT] means "accept on the phone". */
@@ -231,6 +234,7 @@ public class WearPairing(
     }
 
     // Phase 2: bridge + pair
+    prepareTransport(phone, watch, onProgress)
     val hostPort = bridge(phone, watch, companionAppId)
     onProgress(PairingProgress.Bridged(hostPort))
 
@@ -272,11 +276,12 @@ public class WearPairing(
           return PairingResult.NotPaired(
             hostPort,
             lastCompanionState,
-            listOf(
-              "Finish pairing in the companion app on ${phone.serialNumber}, then run `wear-pair status`",
-              "Retry with `wear-pair unpair` then `wear-pair pair`",
-              "If the watch shows it's paired with another phone, use `wear-pair pair --wipe-watch`",
-            ),
+            mismatchFixes(phone) +
+              listOf(
+                "Finish pairing in the companion app on ${phone.serialNumber}, then run `wear-pair status`",
+                "Retry with `wear-pair unpair` then `wear-pair pair`",
+                "If the watch shows it's paired with another phone, use `wear-pair pair --wipe-watch`",
+              ),
           )
         }
       }
@@ -316,6 +321,27 @@ public class WearPairing(
       kotlinx.coroutines.delay(2_500)
     }
   }
+
+  /** Reboots the watch if its emulator transport isn't ready, and waits for the phone's Wear transport to listen on 5601. */
+  private suspend fun prepareTransport(phone: AdbDevice, watch: AdbDevice, onProgress: (PairingProgress) -> Unit) {
+    if (watch.isEmulator() && watch.watchNeedsRebootForEmulatorConnection()) {
+      onProgress(PairingProgress.RebootingWatch(watch.serialNumber))
+      watch.rebootAndWait(tools, options.bootTimeout)
+      watch.waitForGmsCore()
+    }
+    if (!phone.awaitListening(WEARABLE_EMULATOR_PORT)) {
+      logger.warn("${phone.serialNumber} isn't listening on $WEARABLE_EMULATOR_PORT yet; bridging anyway")
+    }
+  }
+
+  /** Explains a cloud network mismatch logged by the phone's Wear transport, if any. */
+  private suspend fun mismatchFixes(phone: AdbDevice): List<String> =
+    if (phone.networkIdMismatch() != null) {
+      listOf(
+        "${phone.serialNumber} rejected the watch: they belong to different cloud networks (Wear_Transport: networkid mismatch). " +
+          "Use `wear-pair pair --wipe-watch`, or unpair and re-pair the watch with this phone"
+      )
+    } else emptyList()
 
   private suspend fun ensurePhoneGmsReady(phone: AdbDevice, onProgress: (PairingProgress) -> Unit) {
     if (phone.isPairingStatusAvailable()) return
@@ -431,12 +457,13 @@ public class WearPairing(
 
     if (resetWatch) {
       watch.shell("pm clear $GMSCORE_APP_ID")
-      // After clearing Google Play services the watch's emulator transport doesn't accept a new phone until it reboots.
-      tools.run(tools.requireAdb(), "-s", watch.serialNumber, "reboot", timeoutSeconds = 60)
-      kotlinx.coroutines.delay(5_000)
-      waitForCondition(options.bootTimeout.inWholeMilliseconds, pollMillis = 3_000) { watch.isBootCompleted() }
       waitForCondition(60_000, pollMillis = 2_000) { watch.loadNodeID().isNotEmpty() }
-      steps += "Reset Google Play services on ${watch.serialNumber} and rebooted it (new node id, no peers)"
+      steps += "Reset Google Play services on ${watch.serialNumber} (new node id, no peers)"
+      // Without its default `network` connection config the watch won't accept a new phone until it reboots.
+      if (watch.watchNeedsRebootForEmulatorConnection()) {
+        watch.rebootAndWait(tools, options.bootTimeout)
+        steps += "Rebooted ${watch.serialNumber} so it accepts a new phone"
+      }
     } else {
       watch.refreshEmulatorConnection(logger)
       steps += "Kept the watch's pairing state (pair it with a different phone later using --wipe-watch)"

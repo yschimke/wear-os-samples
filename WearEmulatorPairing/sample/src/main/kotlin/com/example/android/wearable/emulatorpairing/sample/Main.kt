@@ -32,6 +32,7 @@ import com.example.android.wearable.emulatorpairing.avd.Severity
 import com.example.android.wearable.emulatorpairing.avd.hostAbi
 import com.example.android.wearable.emulatorpairing.companion.SignInHelper
 import com.example.android.wearable.emulatorpairing.checkWearMayNeedFactoryReset
+import com.example.android.wearable.emulatorpairing.connectionServiceDump
 import com.example.android.wearable.emulatorpairing.companion.CompanionInstallEvent
 import com.example.android.wearable.emulatorpairing.companion.CompanionInstaller
 import com.example.android.wearable.emulatorpairing.companion.CompanionSource
@@ -89,7 +90,11 @@ Other flags
   --wipe-watch                  if the watch is paired with another phone, wipe and cold-boot it
   --accept-terms                accept the companion app's Terms of Service with all optional boxes unchecked
                                 (a legal agreement for the signed-in account: only with the owner's consent)
-  --window                      show the window when (re)starting emulators"""
+  --window                      show the window when (re)starting emulators
+  --verbose                     doctor/paired: include the Wearable connection-manager dump per device
+Environment
+  ANDROID_PHONE_SERIAL, ANDROID_WATCH_SERIAL   default serials when not passed
+  NO_COLOR                      disable coloured output"""
 
 private class Args(argv: Array<String>) {
   val positional = mutableListOf<String>()
@@ -155,7 +160,10 @@ fun main(argv: Array<String>): Unit = runBlocking {
             val kind = if (it.deviceState != DeviceState.ONLINE) "-" else if (d.isWatch()) "watch" else "phone"
             println("${it.serialNumber}\t${it.deviceState}\t$kind\t${if (it.deviceState == DeviceState.ONLINE) d.avdName().orEmpty() else ""}")
           }
-        "paired" -> printPaired(PairDiscovery(session))
+        "paired" -> {
+          printPaired(PairDiscovery(session))
+          if ("--verbose" in args.flags) printConnectionDumps(onlineDevices(session, pairing))
+        }
         "create" -> {
           val phoneImage = catalog.suitablePhoneImages().firstOrNull()
             ?: usage("no installed Google Play phone image (API 30+). Install one: android sdk install \"system-images;android-36;google_apis_playstore;${hostAbi()}\"")
@@ -199,7 +207,10 @@ fun main(argv: Array<String>): Unit = runBlocking {
           println("phone=${phone.serialNumber} watch=${watch.serialNumber}")
           when (command) {
             "pair" -> pair(pairing, phone, watch)
-            "doctor" -> doctor(catalog, phone, watch, sources)
+            "doctor" -> {
+              doctor(catalog, phone, watch, sources)
+              if ("--verbose" in args.flags) printConnectionDumps(listOf(phone, watch))
+            }
             "status" -> println(if (pairing.isPaired(phone, watch)) "paired" else "not paired")
             "bridge" -> println("bridged on host port ${pairing.bridge(phone, watch)}; paired=${pairing.isPaired(phone, watch)}")
             "disconnect" -> pairing.disconnect(phone, watch).also { println("disconnected (run `wear-pair bridge` to reconnect)") }
@@ -241,8 +252,13 @@ private suspend fun singleOnline(session: AdbSession, pairing: WearPairing, watc
 }
 
 private suspend fun detect(session: AdbSession, pairing: WearPairing): Pair<AdbDevice, AdbDevice> {
+  val envPhone = System.getenv("ANDROID_PHONE_SERIAL")?.takeIf { it.isNotBlank() }
+  val envWatch = System.getenv("ANDROID_WATCH_SERIAL")?.takeIf { it.isNotBlank() }
+  if (envPhone != null && envWatch != null) return pairing.device(envPhone) to pairing.device(envWatch)
   val online = onlineDevices(session, pairing)
-  val (watches, phones) = online.partition { it.isWatch() }
+  val (detectedWatches, detectedPhones) = online.partition { it.isWatch() }
+  val watches = envWatch?.let { listOf(pairing.device(it)) } ?: detectedWatches
+  val phones = envPhone?.let { listOf(pairing.device(it)) } ?: detectedPhones
   if (watches.size != 1 || phones.size != 1) {
     System.err.println("Expected exactly one phone and one watch online, found phones=$phones watches=$watches. Pass serials explicitly.")
     System.err.println("Tip: `wear-pair avds` lists AVDs that can pair; `wear-pair start <avd>` starts one.")
@@ -261,6 +277,7 @@ private suspend fun pair(pairing: WearPairing, phone: AdbDevice, watch: AdbDevic
           println("Automatic pairing didn't complete. On the phone:")
           progress.instructions.forEachIndexed { i, s -> println("  ${i + 1}. $s") }
         }
+        is PairingProgress.RebootingWatch -> println("Rebooting ${progress.serial} so its emulator transport accepts a phone…")
         is PairingProgress.WipingWatch -> println("Watch ${progress.serial} is paired with another phone: wiping and cold-booting it…")
         is PairingProgress.RepairingGmsCore -> println("Waiting for Google Play services on ${progress.serial} to initialise…")
         else -> println(progress)
@@ -301,7 +318,7 @@ private fun printAvds(catalog: AvdCatalog) {
       }
       println("  ${a.avd.name}  [API ${a.avd.api ?: "?"}, ${a.avd.tagIds.joinToString()}, ${a.avd.abi}]  $verdict")
       for (p in a.problems) {
-        println("      ${if (p.severity == Severity.ERROR) "✗" else "!"} ${p.message}")
+        println("      ${if (p.severity == Severity.ERROR) Marks.bad else Marks.warn} ${p.message}")
         p.fix?.let { println("        fix: $it") }
       }
     }
@@ -324,10 +341,10 @@ private fun printPaired(discovery: PairDiscovery) = runBlocking {
 
 private suspend fun doctor(catalog: AvdCatalog, phone: AdbDevice, watch: AdbDevice, sources: List<CompanionSource>) {
   var problems = 0
-  fun ok(msg: String) = println("  ✓ $msg")
+  fun ok(msg: String) = println("  ${Marks.ok} $msg")
   fun bad(msg: String, vararg fixes: String) {
     problems++
-    println("  ✗ $msg")
+    println("  ${Marks.bad} $msg")
     fixes.forEach { println("      fix: $it") }
   }
 
@@ -393,5 +410,21 @@ private object ConsoleSignInHelper : SignInHelper {
     if (!interactive) return null
     println("$prompt ")
     return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { readlnOrNull() }?.trim()?.takeIf { it.isNotEmpty() }
+  }
+}
+
+/** Coloured status marks when stdout is a terminal and NO_COLOR isn't set (https://no-color.org). */
+private object Marks {
+  private val color = System.getenv("NO_COLOR").isNullOrEmpty() && (System.console() != null || System.getenv("FORCE_COLOR").let { it != null && it != "0" })
+  private fun c(code: String, s: String) = if (color) "\u001b[${code}m$s\u001b[0m" else s
+  val ok = c("32", "✓")
+  val bad = c("31", "✗")
+  val warn = c("33", "!")
+}
+
+private suspend fun printConnectionDumps(devices: List<AdbDevice>) {
+  for (d in devices) {
+    println("\n--- ConnectionServiceManager (${d.serialNumber}) ---")
+    println(d.connectionServiceDump().lines().joinToString("\n") { "    $it" })
   }
 }

@@ -60,9 +60,17 @@ Do these before a test session so that pairing later needs no one present:
 - `$WP install-companion [phoneSerial] --companion-apk <apk|dir>` (or `--companion-from`, `--test-account`,
   `--play`) installs the companion app without a watch. It uses the online watch's companion if there is one,
   otherwise `--package <id>`, defaulting to the Pixel Watch app.
-- **Watches can't sign in on their own.** Wear OS copies the account from the paired phone. So `$WP sign-in <watch>`
-  only works once the watch is paired with a signed-in phone; it then taps "Open on phone" and
-  waits for the person to approve on the phone.
+- **Watches can't sign in on their own.** Wear OS copies the account from the paired phone ("Open on phone" on the
+  watch, then "Continue as …" on the phone). What we've found on emulators:
+  - Both devices need a **screen lock**, or the copy fails silently. Set one with `adb -s <serial> shell locksettings set-pin 1234`;
+    the phone then asks "Verify it's you" for that PIN.
+  - The copy then uses Google's device-to-device (FIDO) transfer. On current emulator images it fails when both sides try to
+    register a device key (`GLSUser … Device key file not found` / `AppCertManager … response code 400` in logcat). So **the
+    watch ends up without the account**, even though the phone shows success.
+  - The "Associate with the watch" card in the Pixel Watch app isn't supported for emulators (`WearCDM: CDM association not
+    supported for watch emulator`); ignore it.
+  - Most phone/watch flows (Data Layer, messages, the companion's own account) don't need an account on the watch. Treat watch
+    sign-in as unsupported on emulators for now.
 
 ## Getting the companion app onto the phone
 

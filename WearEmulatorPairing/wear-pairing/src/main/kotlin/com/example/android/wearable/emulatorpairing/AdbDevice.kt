@@ -57,7 +57,8 @@ public class AdbDevice(public val session: AdbSession, public val serialNumber: 
   public suspend fun isEmulator(): Boolean = serialNumber.startsWith("emulator-") || getProperty("ro.kernel.qemu") == "1" ||
     getProperty("ro.boot.qemu") == "1"
 
-  public suspend fun isWatch(): Boolean = shell("pm has-feature android.hardware.type.watch").contains("true")
+  public suspend fun isWatch(): Boolean =
+    getProperty("ro.build.characteristics")?.contains("watch") == true || shell("pm has-feature android.hardware.type.watch").contains("true")
 
   /** The AVD name for emulators, or null for physical devices / older images. */
   public suspend fun avdName(): String? = getProperty("ro.boot.qemu.avd_name") ?: getProperty("ro.kernel.qemu.avd_name")
