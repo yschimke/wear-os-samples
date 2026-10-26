@@ -19,6 +19,9 @@ import com.android.adblib.AdbSession
 import com.android.adblib.DeviceState
 import com.android.adblib.SocketSpec
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 
 /** A device as seen by [PairDiscovery]. */
 public data class WearableNode(
@@ -67,23 +70,30 @@ public data class PairingReport(
  */
 public class PairDiscovery(private val session: AdbSession) {
 
-  public suspend fun discover(): PairingReport {
+  public suspend fun discover(): PairingReport = coroutineScope {
     val serials = session.hostServices.devices().filter { it.deviceState == DeviceState.ONLINE }.map { it.serialNumber }
-    val nodes = serials.map { serial -> node(AdbDevice(session, serial)) }
+    val nodes = serials.map { serial -> async { node(AdbDevice(session, serial)) } }.awaitAll()
     val (watches, phones) = nodes.partition { it.isWatch }
 
     val wearablePort = SocketSpec.Tcp(WEARABLE_EMULATOR_PORT).toQueryString()
-    val phoneBridges: Map<String, List<Int>> =
+    val phoneBridgesDeferred = async {
       tryOrEmpty { session.hostServices.listForward().toList() }
         .filter { it.remote.toQueryString() == wearablePort }
         .groupBy({ it.deviceSerial }, { (it.local as? SocketSpec.Tcp)?.port ?: -1 })
+    }
     val watchBridges: Map<String, List<Int>> =
-      watches.associate { w ->
-        w.serial to
-          tryOrEmpty { session.deviceServices.reverseListForward(AdbDevice(session, w.serial).selector).toList() }
-            .filter { it.remote.toQueryString() == wearablePort }
-            .mapNotNull { (it.local as? SocketSpec.Tcp)?.port }
-      }
+      watches
+        .map { w ->
+          async {
+            w.serial to
+              tryOrEmpty { session.deviceServices.reverseListForward(AdbDevice(session, w.serial).selector).toList() }
+                .filter { it.remote.toQueryString() == wearablePort }
+                .mapNotNull { (it.local as? SocketSpec.Tcp)?.port }
+          }
+        }
+        .awaitAll()
+        .toMap()
+    val phoneBridges: Map<String, List<Int>> = phoneBridgesDeferred.await()
 
     val pairs = mutableListOf<PairInfo>()
     for (phone in phones) {
@@ -108,7 +118,7 @@ public class PairDiscovery(private val session: AdbSession) {
         w.peers.filter { p -> !p.nodeId.isNullOrEmpty() && p.nodeId.lowercase() !in phoneIds }.map { ForeignPairing(w, it.nodeId!!, it.connected) }
       }
     val pairedSerials = pairs.flatMap { listOf(it.phone.serial, it.watch.serial) }.toSet()
-    return PairingReport(
+    PairingReport(
       pairs = pairs,
       foreign = foreign,
       unpairedPhones = phones.filter { it.serial !in pairedSerials },
@@ -116,10 +126,13 @@ public class PairDiscovery(private val session: AdbSession) {
     )
   }
 
-  private suspend fun node(device: AdbDevice): WearableNode {
-    val status = device.getPairingStatus()
+  private suspend fun node(device: AdbDevice): WearableNode = coroutineScope {
+    val statusDeferred = async { device.getPairingStatus() }
+    val avdNameDeferred = async { device.avdName() }
+    val isWatchDeferred = async { device.isWatch() }
+    val status = statusDeferred.await()
     val nodeId = status.localNodeId ?: device.loadNodeID()
-    return WearableNode(device.serialNumber, device.avdName(), device.isWatch(), nodeId, status.peers)
+    WearableNode(device.serialNumber, avdNameDeferred.await(), isWatchDeferred.await(), nodeId, status.peers)
   }
 
   private suspend fun <T> tryOrEmpty(block: suspend () -> List<T>): List<T> =

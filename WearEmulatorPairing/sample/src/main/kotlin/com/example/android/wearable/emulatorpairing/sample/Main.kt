@@ -44,10 +44,14 @@ import com.example.android.wearable.emulatorpairing.getCompanionAppIdForWatch
 import com.example.android.wearable.emulatorpairing.hasPairingFeature
 import com.example.android.wearable.emulatorpairing.isCompanionAppInstalled
 import com.example.android.wearable.emulatorpairing.isPairingStatusAvailable
+import com.example.android.wearable.emulatorpairing.networkIdMismatch
 import com.example.android.wearable.emulatorpairing.supportsCompanionAppId
 import com.example.android.wearable.emulatorpairing.tools.AndroidTools
 import com.example.android.wearable.emulatorpairing.tools.EmulatorControl
+import com.example.android.wearable.emulatorpairing.watchNeedsRebootForEmulatorConnection
 import java.nio.file.Paths
+import java.util.logging.Level
+import java.util.logging.Logger
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
 
@@ -87,6 +91,7 @@ Companion source flags (pair / install-companion; tried in this order)
   --play                        open sign-in / Play Store on the phone and tap Install (Android CLI)
 Other flags
   --phone-avd <name> --watch-avd <name>   names for `create` (default Wear_Pair_Phone / Wear_Pair_Watch)
+  --phone-image <pkg> --watch-image <pkg> system-image package ids (or substrings) for `create`
   --wipe-watch                  if the watch is paired with another phone, wipe and cold-boot it
   --accept-terms                accept the companion app's Terms of Service with all optional boxes unchecked
                                 (a legal agreement for the signed-in account: only with the owner's consent)
@@ -106,7 +111,8 @@ private class Args(argv: Array<String>) {
     while (i < argv.size) {
       val a = argv[i]
       when {
-        a in setOf("--companion-apk", "--companion-from", "--phone-avd", "--watch-avd", "--package") -> multi.getOrPut(a) { mutableListOf() } += argv.getOrElse(++i) { usage("$a needs a value") }
+        a in setOf("--companion-apk", "--companion-from", "--phone-avd", "--watch-avd", "--phone-image", "--watch-image", "--package") ->
+          multi.getOrPut(a) { mutableListOf() } += argv.getOrElse(++i) { usage("$a needs a value") }
         a.startsWith("--") -> flags += a
         else -> positional += a
       }
@@ -140,6 +146,7 @@ fun main(argv: Array<String>): Unit = runBlocking {
     "help", "--help", "-h" -> usage()
   }
 
+  if ("--verbose" !in args.flags) Logger.getLogger("").level = Level.WARNING
   AdbSessionHost().use { host ->
     AdbSession.create(host).use { session ->
       val sources = companionSources(args)
@@ -165,10 +172,20 @@ fun main(argv: Array<String>): Unit = runBlocking {
           if ("--verbose" in args.flags) printConnectionDumps(onlineDevices(session, pairing))
         }
         "create" -> {
-          val phoneImage = catalog.suitablePhoneImages().firstOrNull()
-            ?: usage("no installed Google Play phone image (API 30+). Install one: android sdk install \"system-images;android-36;google_apis_playstore;${hostAbi()}\"")
-          val watchImage = catalog.suitableWatchImages().firstOrNull()
-            ?: usage("no installed Wear OS image. Install one: android sdk install \"system-images;android-36;android-wear-signed;${hostAbi()}\"")
+          val phoneQuery = args.multi["--phone-image"]?.last()
+          val watchQuery = args.multi["--watch-image"]?.last()
+          val phoneImage =
+            catalog.suitablePhoneImages().firstOrNull { phoneQuery == null || it.packageId.contains(phoneQuery) }
+              ?: usage(
+                if (phoneQuery != null) "no installed Google Play phone image matching '$phoneQuery'; see `wear-pair avds`"
+                else "no installed Google Play phone image (API 30+). Install one: sdkmanager \"system-images;android-37.0;google_apis_playstore;${hostAbi()}\""
+              )
+          val watchImage =
+            catalog.suitableWatchImages().firstOrNull { watchQuery == null || it.packageId.contains(watchQuery) }
+              ?: usage(
+                if (watchQuery != null) "no installed Wear OS image matching '$watchQuery'; see `wear-pair avds`"
+                else "no installed Wear OS image. Install one: sdkmanager \"system-images;android-37.0;android-wear-signed;${hostAbi()}\""
+              )
           val phoneName = args.multi["--phone-avd"]?.last() ?: "Wear_Pair_Phone"
           val watchName = args.multi["--watch-avd"]?.last() ?: "Wear_Pair_Watch"
           catalog.createAvd(phoneName, phoneImage)
@@ -351,8 +368,9 @@ private suspend fun doctor(catalog: AvdCatalog, phone: AdbDevice, watch: AdbDevi
   println("Phone ${phone.serialNumber} (${phone.avdName() ?: "physical"})")
   val sdk = phone.getProperty("ro.build.version.sdk")?.toIntOrNull() ?: 0
   if (sdk >= 30) ok("API $sdk") else bad("API $sdk < 30", catalog.recommendPhoneImageFix())
+  if (phone.isLocked()) println("  ${Marks.warn} locked at PIN screen: Play services and companion won't run until unlocked (`pair`/`keep`/`sign-in` unlock PIN 1234 automatically)")
   phone.avdName()?.let { name -> catalog.avds().firstOrNull { it.name == name } }?.let { avd ->
-    catalog.assessPhone(avd).problems.filter { it.severity == Severity.STUDIO_ONLY }.forEach { println("  ! ${it.message}\n      fix: ${it.fix}") }
+    catalog.assessPhone(avd).problems.filter { it.severity == Severity.STUDIO_ONLY }.forEach { println("  ${Marks.warn} ${it.message}\n      fix: ${it.fix}") }
   }
   val companionAppId = watch.getCompanionAppIdForWatch()
   val hasPlay = phone.shell("pm path com.android.vending").isNotBlank()
@@ -370,18 +388,34 @@ private suspend fun doctor(catalog: AvdCatalog, phone: AdbDevice, watch: AdbDevi
       }.toTypedArray(),
     )
   }
-  if (hasPlay) ok("Play Store present") else println("  ! no Play Store (only matters if the companion isn't installed)")
-  if (hasAccount) ok("Google account signed in") else println("  ! no Google account signed in (needed for Play Store installs; use --test-account or sign in)")
+  if (hasPlay) ok("Play Store present") else println("  ${Marks.warn} no Play Store (only matters if the companion isn't installed)")
+  if (hasAccount) ok("Google account signed in") else println("  ${Marks.warn} no Google account signed in (needed for Play Store installs and watch account copy; use --test-account or sign-in)")
   if (phone.hasPairingFeature(PairingFeature.MULTI_WATCH_SINGLE_PHONE_PAIRING)) ok("Google Play services ${phone.getAppVersionCode(GMSCORE_APP_ID)}")
   else bad("Google Play services too old (${phone.getAppVersionCode(GMSCORE_APP_ID)})", catalog.recommendPhoneImageFix())
   if (phone.isPairingStatusAvailable()) ok("Wearable pairing status available")
-  else println("  ! Wearable service not reporting pairing status yet (normal until the companion is installed; pair will nudge GMS Core)")
+  else println("  ${Marks.warn} Wearable service not reporting pairing status yet (normal until the companion is installed; pair will nudge GMS Core)")
+  phone.networkIdMismatch()?.let {
+    println("  ${Marks.warn} Wear transport logged a cloud networkId mismatch (watch networkId=$it); run `wear-pair unpair` then `pair` if connection stays down")
+  }
 
   println("Watch ${watch.serialNumber} (${watch.avdName() ?: "physical"})")
   val wsdk = watch.getProperty("ro.build.version.sdk")?.toIntOrNull() ?: 0
   if (wsdk >= 28) ok("API $wsdk") else bad("API $wsdk < 28", catalog.recommendWatchImageFix())
-  if (watch.hasPairingFeature(PairingFeature.REVERSE_PORT_FORWARD)) ok("Google Play services ${watch.getAppVersionCode(GMSCORE_APP_ID)}")
-  else bad("Google Play services too old (${watch.getAppVersionCode(GMSCORE_APP_ID)})", catalog.recommendWatchImageFix())
+  if (watch.isLocked()) println("  ${Marks.warn} locked at PIN screen: unlock it (`pair`/`keep`/`sign-in` unlock PIN 1234 automatically)")
+  val wgms = watch.getAppVersionCode(GMSCORE_APP_ID)
+  if (watch.hasPairingFeature(PairingFeature.REVERSE_PORT_FORWARD)) {
+    ok("Google Play services $wgms")
+    if (!watch.hasPairingFeature(PairingFeature.WATCH_ACCOUNT_COPY)) {
+      println("  ${Marks.warn} Google Play services $wgms < 26.x: pairing works, while copying a Google account (`wear-pair sign-in`) needs Wear OS 7 (API 37.0 signed)")
+    }
+  } else {
+    bad("Google Play services too old ($wgms)", catalog.recommendWatchImageFix())
+  }
+  if (CompanionInstaller.hasGoogleAccount(watch)) ok("Google account signed in")
+  else println("  ${Marks.warn} no Google account on watch (optional for Data Layer; run `wear-pair sign-in ${watch.serialNumber}` on Wear OS 7+)")
+  if (watch.watchNeedsRebootForEmulatorConnection()) {
+    println("  ${Marks.warn} emulator transport missing default network config after GMS reset (`pair` will reboot the watch automatically)")
+  }
   if (checkWearMayNeedFactoryReset(phone, watch)) bad("watch is paired with a different phone", "wear-pair pair --wipe-watch")
   else ok("not paired with another phone")
 

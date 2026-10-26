@@ -47,10 +47,19 @@ public data class SdkLocations(val sdkRoot: Path?, val avdHome: Path) {
 }
 
 /** An installed system image under `<sdk>/system-images/<platform>/<tag>/<abi>`. */
-public data class SystemImage(val path: Path, val platform: String, val tagIds: List<String>, val abi: String, val api: Int?) {
-  /** The `sdkmanager` package id, e.g. `system-images;android-36;google_apis_playstore;x86_64`. */
+public data class SystemImage(
+  val path: Path,
+  val platform: String,
+  val tagIds: List<String>,
+  val abi: String,
+  val api: Int?,
+  val apiMinor: Int = 0,
+) {
+  /** The `sdkmanager` package id, e.g. `system-images;android-37.0;google_apis_playstore;x86_64`. */
   val packageId: String = "system-images;$platform;${path.parent.name};$abi"
   val isWear: Boolean = isWearTag(tagIds)
+  val isChinaWear: Boolean = path.parent.name.endsWith("-cn") || tagIds.any { it.endsWith("-cn") }
+  val isSigned: Boolean = path.parent.name.endsWith("-signed") || tagIds.any { it.endsWith("-signed") }
   val hasPlayStore: Boolean = hasPlayStoreTag(tagIds, path.toString())
 }
 
@@ -68,6 +77,7 @@ public data class Avd(
   val image: SystemImage?,
 ) {
   val isWear: Boolean = isWearTag(tagIds)
+  val isSigned: Boolean = image?.isSigned ?: (imageSysdir?.contains("-signed") == true || tagIds.any { it.endsWith("-signed") })
   /** Whether the system image itself ships Google Play, regardless of the config flag. */
   val imageHasPlayStore: Boolean = image?.hasPlayStore ?: hasPlayStoreTag(tagIds, imageSysdir.orEmpty())
 }
@@ -92,12 +102,15 @@ public data class AvdAssessment(val avd: Avd, val problems: List<Problem>) {
 public const val MIN_PHONE_API: Int = 30
 public const val MIN_WATCH_API: Int = 28
 
+/** Minimum watch API level where copying a Google account from the paired phone (`wear-pair sign-in <watch>`) succeeds. */
+public const val MIN_WATCH_ACCOUNT_COPY_API: Int = 37
+
 public class AvdCatalog(public val locations: SdkLocations = SdkLocations.detect()) {
 
   public fun systemImages(): List<SystemImage> {
     val root = locations.sdkRoot?.resolve("system-images") ?: return emptyList()
     if (!root.isDirectory()) return emptyList()
-    return root.listDirectoryEntries().filter { it.isDirectory() }.flatMap { platform ->
+    return root.listDirectoryEntries().filter { it.isDirectory() && parseApi(it.name) != null }.flatMap { platform ->
       platform.listDirectoryEntries().filter { it.isDirectory() }.flatMap { tag ->
         tag.listDirectoryEntries().filter { it.isDirectory() && it.resolve("system.img").exists() } // skip partial installs
           .map { abiDir -> readSystemImage(platform.name, tag.name, abiDir) }
@@ -142,8 +155,16 @@ public class AvdCatalog(public val locations: SdkLocations = SdkLocations.detect
   public fun assessWatch(avd: Avd): AvdAssessment {
     val problems = mutableListOf<Problem>()
     if (!avd.isWear) problems += Problem(Severity.ERROR, "Not a Wear OS image")
-    avd.api?.takeIf { it < MIN_WATCH_API }?.let {
-      problems += Problem(Severity.ERROR, "API $it is too old: Wear OS emulators must be API $MIN_WATCH_API or newer", recommendWatchImageFix())
+    val api = avd.api
+    if (api != null && api < MIN_WATCH_API) {
+      problems += Problem(Severity.ERROR, "API $api is too old: Wear OS emulators must be API $MIN_WATCH_API or newer", recommendWatchImageFix())
+    } else if (avd.isWear && ((api ?: 0) < MIN_WATCH_ACCOUNT_COPY_API || !avd.isSigned)) {
+      problems +=
+        Problem(
+          Severity.WARNING,
+          "Copying a Google account to the watch (`wear-pair sign-in`) needs a signed Wear OS 7+ image " +
+            "(API $MIN_WATCH_ACCOUNT_COPY_API+); pairing and Data Layer work as-is",
+        )
     }
     imageMissingProblem(avd)?.let { problems += it }
     return AvdAssessment(avd, problems)
@@ -151,7 +172,9 @@ public class AvdCatalog(public val locations: SdkLocations = SdkLocations.detect
 
   /** Installed images that would make a usable phone, newest first. */
   public fun suitablePhoneImages(): List<SystemImage> =
-    systemImages().filter { !it.isWear && it.hasPlayStore && (it.api ?: 0) >= MIN_PHONE_API && it.abi == hostAbi() }.sortedByDescending { it.api }
+    systemImages()
+      .filter { !it.isWear && it.hasPlayStore && (it.api ?: 0) >= MIN_PHONE_API && it.abi == hostAbi() }
+      .sortedWith(compareByDescending<SystemImage> { it.api ?: 0 }.thenByDescending { it.apiMinor })
 
   /**
    * Creates (or replaces) an AVD named [name] from [image], writing the same files the AVD manager would. Phone AVDs on Play images
@@ -193,7 +216,9 @@ public class AvdCatalog(public val locations: SdkLocations = SdkLocations.detect
   }
 
   public fun suitableWatchImages(): List<SystemImage> =
-    systemImages().filter { it.isWear && (it.api ?: 0) >= MIN_WATCH_API && it.abi == hostAbi() }.sortedByDescending { it.api }
+    systemImages()
+      .filter { it.isWear && !it.isChinaWear && (it.api ?: 0) >= MIN_WATCH_API && it.abi == hostAbi() }
+      .sortedWith(compareByDescending<SystemImage> { it.api ?: 0 }.thenByDescending { it.apiMinor }.thenByDescending { it.isSigned })
 
   /** Sets `PlayStore.enabled=yes` in the AVD's config.ini. Only allowed when the image actually ships Google Play. */
   public fun enablePlayStore(avd: Avd) {
@@ -208,17 +233,17 @@ public class AvdCatalog(public val locations: SdkLocations = SdkLocations.detect
 
   public fun recommendPhoneImageFix(): String {
     val installed = suitablePhoneImages().firstOrNull()
-    val pkg = installed?.packageId ?: "system-images;android-36;google_apis_playstore;${hostAbi()}"
+    val pkg = installed?.packageId ?: "system-images;android-37.0;google_apis_playstore;${hostAbi()}"
     val install = if (installed == null) "sdkmanager \"$pkg\" && " else ""
-    return "Create a phone AVD from a Google Play image (API $MIN_PHONE_API+): ${install}avdmanager create avd -n Wear_Pair_Phone -k \"$pkg\" " +
-      "-d pixel_8, then wear-pair enable-playstore Wear_Pair_Phone"
+    return "Create a phone AVD from a Google Play image (API $MIN_PHONE_API+): ${install}wear-pair create (or avdmanager create avd -n Wear_Pair_Phone " +
+      "-k \"$pkg\" -d pixel_8 && wear-pair enable-playstore Wear_Pair_Phone)"
   }
 
   public fun recommendWatchImageFix(): String {
     val installed = suitableWatchImages().firstOrNull()
-    val pkg = installed?.packageId ?: "system-images;android-36;android-wear-signed;${hostAbi()}"
+    val pkg = installed?.packageId ?: "system-images;android-37.0;android-wear-signed;${hostAbi()}"
     val install = if (installed == null) "sdkmanager \"$pkg\" && " else ""
-    return "${install}avdmanager create avd -n Wear_Pair_Watch -k \"$pkg\" -d wearos_large_round"
+    return "${install}wear-pair create (or avdmanager create avd -n Wear_Pair_Watch -k \"$pkg\" -d wearos_large_round)"
   }
 
   private fun imageMissingProblem(avd: Avd): Problem? =
@@ -230,8 +255,8 @@ public class AvdCatalog(public val locations: SdkLocations = SdkLocations.detect
   private fun readSystemImage(platform: String, tag: String, abiDir: Path): SystemImage {
     val props = readProperties(abiDir.resolve("source.properties"))
     val tagIds = props["SystemImage.TagId"]?.split(',')?.map { it.trim() } ?: listOf(tag)
-    val api = props["AndroidVersion.ApiLevel"]?.toIntOrNull() ?: parseApi(platform)
-    return SystemImage(abiDir.normalize(), platform, tagIds, props["SystemImage.Abi"] ?: abiDir.name, api)
+    val (api, minor) = props["AndroidVersion.ApiLevel"]?.let(::parseApiLevel) ?: parseApiVersion(platform)
+    return SystemImage(abiDir.normalize(), platform, tagIds, props["SystemImage.Abi"] ?: abiDir.name, api, minor)
   }
 
   private fun readAvd(ini: Path, images: Map<Path, SystemImage>): Avd? {
@@ -266,7 +291,17 @@ internal fun hasPlayStoreTag(tagIds: List<String>, path: String): Boolean =
   // Wear images ship Play Store too, but the companion only needs to be installed on the phone.
   tagIds.any { it.contains("playstore") } || path.contains("playstore")
 
-internal fun parseApi(target: String): Int? = Regex("""android-(\d+)""").find(target)?.groupValues?.get(1)?.toIntOrNull()
+internal fun parseApi(target: String): Int? = parseApiVersion(target).first
+
+internal fun parseApiVersion(target: String): Pair<Int?, Int> {
+  val m = Regex("""android-(\d+)(?:\.(\d+))?""").find(target) ?: return null to 0
+  return m.groupValues[1].toIntOrNull() to (m.groupValues[2].toIntOrNull() ?: 0)
+}
+
+internal fun parseApiLevel(raw: String): Pair<Int?, Int>? {
+  val m = Regex("""^(\d+)(?:\.(\d+))?$""").find(raw.trim()) ?: return null
+  return (m.groupValues[1].toIntOrNull() ?: return null) to (m.groupValues[2].toIntOrNull() ?: 0)
+}
 
 public fun hostAbi(): String =
   when (System.getProperty("os.arch")) {

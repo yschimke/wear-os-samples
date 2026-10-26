@@ -34,6 +34,9 @@ public enum class PairingFeature(public val minVersion: Int) {
 
   /** Phone: older companions need the user to tap "Skip and finish" after manual pairing. */
   COMPANION_SKIP_AND_FINISH_FIXED(773393865),
+
+  /** Watch: GMS Core 26.x+ (Wear OS 7) completes copying a Google account from the paired phone on emulators. */
+  WATCH_ACCOUNT_COPY(260000000),
 }
 
 public enum class CompanionSupport {
@@ -87,7 +90,8 @@ public suspend fun AdbDevice.hasPairingFeature(pairingFeature: PairingFeature, c
     PairingFeature.REFRESH_EMULATOR_CONNECTION,
     PairingFeature.GET_PAIRING_STATUS,
     PairingFeature.MULTI_WATCH_SINGLE_PHONE_PAIRING,
-    PairingFeature.REVERSE_PORT_FORWARD -> (getAppVersionCode(GMSCORE_APP_ID) ?: 0) >= pairingFeature.minVersion
+    PairingFeature.REVERSE_PORT_FORWARD,
+    PairingFeature.WATCH_ACCOUNT_COPY -> (getAppVersionCode(GMSCORE_APP_ID) ?: 0) >= pairingFeature.minVersion
     PairingFeature.COMPANION_SKIP_AND_FINISH_FIXED ->
       companionAppId != OEM_COMPANION_FALLBACK_APP_ID ||
         (getAppVersionCode(OEM_COMPANION_FALLBACK_APP_ID) ?: 0) >= pairingFeature.minVersion
