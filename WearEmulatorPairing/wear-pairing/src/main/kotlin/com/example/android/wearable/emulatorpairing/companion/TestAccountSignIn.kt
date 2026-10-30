@@ -23,6 +23,9 @@ import com.example.android.wearable.emulatorpairing.loadNodeID
 import com.example.android.wearable.emulatorpairing.tools.AndroidTools
 import com.example.android.wearable.emulatorpairing.tools.AndroidUi
 import com.example.android.wearable.emulatorpairing.tools.UiNode
+import com.example.android.wearable.emulatorpairing.tools.findClickable
+import com.example.android.wearable.emulatorpairing.tools.hasScreenText
+import com.example.android.wearable.emulatorpairing.tools.screenText
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.Properties
@@ -30,8 +33,11 @@ import kotlin.io.path.exists
 import kotlin.io.path.inputStream
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 /**
  * A Google account to sign in on an emulator, for installing the companion app from Play Store. Use a dedicated test account
@@ -76,7 +82,6 @@ public class TestAccount(
   }
 }
 
-
 /**
  * How the sign-in talks to the person running it when Google asks for extra verification. The default implementation only
  * reports messages; the person then finishes on the emulator screen.
@@ -105,12 +110,12 @@ public val USER_VERIFICATION_WINDOW: Duration = 20.minutes
 
 /**
  * Signs a Google account in on an emulator by driving the standard "Add account" screens, using only public tooling:
- * `am start -a android.settings.ADD_ACCOUNT_SETTINGS`, the Android CLI's `android layout`, and `adb shell input`.
+ * `am start -a android.settings.ADD_ACCOUNT_SETTINGS`, the Android CLI's `android layout` (or `uiautomator dump`), and `adb shell input`.
  *
- * Each loop iteration reads the screen and takes one action: skip the phone-number step, enter email, enter password, accept terms,
- * retry an expired session. Some accounts are asked to verify a new device ("Verify it's you"); then the person is told what to do
- * and given [USER_VERIFICATION_WINDOW], choosing a method and entering the code through [SignInHelper] (works with headless
- * emulators) or directly on the emulator screen.
+ * Each loop iteration reads the screen and takes one action: dismiss ANR dialogs, skip the phone-number step, enter email, enter
+ * password, accept terms, finish Google Services / contacts setup, or retry an expired session. Some accounts are asked to verify a new
+ * device ("Verify it's you"); then the person is told what to do and given [USER_VERIFICATION_WINDOW], choosing a method and entering
+ * the code through [SignInHelper] (works with headless emulators) or directly on the emulator screen.
  */
 public class GoogleSignIn(private val tools: AndroidTools = AndroidTools(), private val logger: PairingLogger = PairingLogger.None) {
 
@@ -121,17 +126,19 @@ public class GoogleSignIn(private val tools: AndroidTools = AndroidTools(), priv
     helper: SignInHelper = SignInHelper.notifyOnly { logger.warn(it) },
     timeout: Duration = 5.minutes,
   ): String? {
+    if (device.isEmulator() && device.isLocked()) device.unlockWithPin(EMULATOR_PIN)
     if (hasAccount(device, account.email)) return null
     val ui = AndroidUi(tools, device)
-    if (!ui.available) return "The Android CLI (`android`) is needed to drive the sign-in screens; sign in manually instead"
     if (device.isWatch()) return signInWatch(device, account, ui, helper)
     val password = account.password ?: readSecret(account.passwordCommand!!)
-    if (password.contains('\'')) return "Passwords containing a single quote can't be typed via adb; sign in manually"
 
     device.shell("am start -a android.settings.ADD_ACCOUNT_SETTINGS --esa account_types com.google")
+    delay(2_000)
     var deadline = TimeSource.Monotonic.markNow() + timeout
-    var typedEmail = false
-    var typedPassword = false
+    var accountAddedAt: TimeSource.Monotonic.ValueTimeMark? = null
+    var emailAttempts = 0
+    var passwordAttempts = 0
+    var justSubmittedPassword = false
     var verificationStarted = false
     var chosenMethod = false
     var lastCodeScreen = ""
@@ -139,27 +146,48 @@ public class GoogleSignIn(private val tools: AndroidTools = AndroidTools(), priv
     var handedOff = false
     var lastScreen = ""
     while (deadline.hasNotPassedNow()) {
-      if (hasAccount(device, account.email)) {
+      val signedIn = hasAccount(device, account.email)
+      if (signedIn && accountAddedAt == null) {
+        accountAddedAt = TimeSource.Monotonic.markNow()
         logger.info("${account.email} is signed in on ${device.serialNumber}")
         if (verificationStarted) helper.notify("Verification complete — thanks, continuing automatically.")
-        return null
       }
+
       val nodes = ui.nodes()
       val screen = nodes.mapNotNull { it.label }.joinToString("|")
-      fun clickable(vararg labels: String): UiNode? = nodes.firstOrNull { it.clickable && it.labelIs(*labels) }
-      fun hasText(fragment: String) = nodes.any { it.label?.contains(fragment, ignoreCase = true) == true }
+      fun clickable(vararg labels: String): UiNode? = nodes.findClickable(*labels)
+      fun hasText(fragment: String): Boolean = nodes.hasScreenText(fragment)
 
-      val emailField = nodes.firstOrNull { it.resourceId == "identifierId" }
+      if (signedIn && (!isPostSignInWizard(nodes) || accountAddedAt!!.elapsedNow() > 25.seconds)) {
+        return null
+      }
+
+      val anrWait = nodes.firstOrNull { it.resourceId == "aerr_wait" } ?: if (hasText("isn't responding")) clickable("Wait") else null
+      val emailField =
+        nodes.firstOrNull { it.resourceId == "identifierId" }
+          ?: if (!signedIn && hasText("Email or phone") && !hasText("password")) nodes.firstOrNull { it.clickable && it.focused && it.label == null } else null
       val passwordField = nodes.firstOrNull { it.isPassword }
+      val accountNotFound =
+        hasText("Couldn't find your Google Account") || hasText("Couldn't find this account") || hasText("Enter a valid email")
       val isChallenge =
-        hasText("Verify it") || hasText("2-Step Verification") || hasText("Choose how you want to sign in") || hasText("verification code")
-      when {
-        nodes.isEmpty() || hasText("Checking info") || hasText("Just a sec") -> Unit // loading
+        !signedIn &&
+          (hasText("Verify it") ||
+            hasText("2-Step Verification") ||
+            hasText("Choose how you want to sign in") ||
+            hasText("verification code") ||
+            hasText("Check your ") ||
+            hasText("Tap Yes on the notification"))
 
-        // "X isn't responding" (slow first boot): keep waiting rather than killing the app.
-        nodes.any { it.resourceId == "aerr_wait" } -> {
+      when {
+        // Always dismiss "X isn't responding" first (even over loading or password screens) so it can't steal input focus.
+        anrWait != null -> {
           logger.info("Dismissing an app-not-responding dialog (Wait)")
-          ui.tap(nodes.first { it.resourceId == "aerr_wait" })
+          justSubmittedPassword = false
+          ui.tap(anrWait)
+        }
+
+        nodes.isEmpty() || hasText("Checking info") || hasText("Just a sec") || hasText("Signing in") || hasText("One moment") -> {
+          justSubmittedPassword = false
         }
 
         hasText("Sign in with ease") && clickable("SKIP", "Skip") != null -> {
@@ -167,25 +195,43 @@ public class GoogleSignIn(private val tools: AndroidTools = AndroidTools(), priv
           ui.tap(clickable("SKIP", "Skip")!!)
         }
 
-        emailField != null && emailField.text?.trim()?.equals(account.email, ignoreCase = true) != true -> {
-          logger.info("Entering email")
-          ui.tap(emailField)
-          if (!emailField.text.isNullOrBlank()) ui.clearFocusedField()
-          ui.type(account.email)
-          ui.enter() // Don't tap NEXT: the keyboard moves it.
-          typedEmail = true
+        accountNotFound && emailField != null -> {
+          if (emailField.text?.trim()?.equals(account.email, ignoreCase = true) == true && emailAttempts >= 2) {
+            return "Google couldn't find the account ${account.email}"
+          }
+          logger.info("Re-entering email (previous input didn't match ${account.email})")
+          ui.focusAndType(emailField, account.email, clearFirst = true)
+          ui.enter()
+          emailAttempts++
         }
 
-        emailField != null -> ui.enter() // Correct email already entered; submit.
+        emailField != null && emailField.text?.trim()?.equals(account.email, ignoreCase = true) != true -> {
+          logger.info("Entering email")
+          ui.focusAndType(emailField, account.email, clearFirst = !emailField.text.isNullOrBlank() || emailAttempts > 0)
+          ui.enter() // Don't tap NEXT first: the soft keyboard moves it.
+          emailAttempts++
+        }
+
+        emailField != null -> {
+          val next = clickable("NEXT", "Next")
+          if (emailAttempts > 1 && next != null) ui.tap(next) else ui.enter()
+          emailAttempts++
+        }
 
         hasText("Wrong password") -> return "Google rejected the password for ${account.email}"
 
-        passwordField != null && !typedPassword -> {
-          logger.info("Entering password")
-          ui.tap(passwordField)
-          ui.type(password)
-          ui.enter()
-          typedPassword = true
+        passwordField != null && justSubmittedPassword -> {
+          // Allow one extra poll for WebView navigation before concluding the password submission was dropped.
+          justSubmittedPassword = false
+        }
+
+        passwordField != null && passwordAttempts < 3 -> {
+          logger.info("Entering password" + if (passwordAttempts > 0) " (attempt ${passwordAttempts + 1})" else "")
+          ui.focusAndType(passwordField, password, clearFirst = passwordAttempts > 0)
+          val next = clickable("NEXT", "Next")
+          if (passwordAttempts > 0 && next != null) ui.tap(next) else ui.enter()
+          passwordAttempts++
+          justSubmittedPassword = true
         }
 
         isChallenge -> {
@@ -194,14 +240,15 @@ public class GoogleSignIn(private val tools: AndroidTools = AndroidTools(), priv
             deadline = TimeSource.Monotonic.markNow() + USER_VERIFICATION_WINDOW
             helper.notify(verificationBriefing(device))
           }
-          val codeField = nodes.firstOrNull { it.label == null && it.clickable && it.resourceId != null } ?: nodes.firstOrNull { it.focused && it.label == null && it.clickable }
-          val methods = nodes.filter { it.clickable && it.contentDesc != null && it.contentDesc != "Try another way" }
-          // "Check your <device>": approve the notification on another signed-in device and tap the number shown here.
-          val promptDevice = nodes.firstNotNullOfOrNull { n -> n.label?.let { Regex("^Check your (.+)$").find(it.trim())?.groupValues?.get(1) } }
-          val matchNumber = nodes.firstNotNullOfOrNull { n -> n.label?.trim()?.takeIf { Regex("^\\d{1,3}$").matches(it) } }
+          val codeField =
+            nodes.firstOrNull { it.label == null && it.clickable && it.resourceId != null }
+              ?: nodes.firstOrNull { it.focused && it.label == null && it.clickable }
+          val methods = extractVerificationMethods(nodes)
+          val devicePrompt = extractDevicePrompt(nodes)
           when {
-            promptDevice != null && "$promptDevice/$matchNumber" == lastDevicePrompt -> Unit // waiting for approval
-            promptDevice != null -> {
+            devicePrompt != null && "${devicePrompt.first}/${devicePrompt.second}" == lastDevicePrompt -> Unit
+            devicePrompt != null -> {
+              val (promptDevice, matchNumber) = devicePrompt
               lastDevicePrompt = "$promptDevice/$matchNumber"
               helper.notify(
                 "Google sent a sign-in prompt to your $promptDevice. On it, tap Yes on the Google notification" +
@@ -209,18 +256,20 @@ public class GoogleSignIn(private val tools: AndroidTools = AndroidTools(), priv
                   ". No notification? Choose \"Try another way\" on the emulator, or re-run with --companion-apk instead."
               )
             }
-            // A code entry screen: "Enter the code…" with an input field.
+            // A code entry screen: "Enter the code…" or recovery email confirmation.
             ((hasText("Enter") && hasText("code")) || hasText("recovery email")) && codeField != null && screen != lastCodeScreen -> {
               lastCodeScreen = screen
               val askingEmail = hasText("recovery email") && !hasText("code")
-              val code = helper.askCode(if (askingEmail) "Enter the account's recovery email address (or press Enter to type it on the emulator):" else "Enter the verification code Google just sent (or press Enter to type it on the emulator):")
-              if (!code.isNullOrBlank() && askingEmail && !code.contains('\'')) {
-                ui.tap(codeField)
-                ui.type(code.trim())
+              val code =
+                helper.askCode(
+                  if (askingEmail) "Enter the account's recovery email address (or press Enter to type it on the emulator):"
+                  else "Enter the verification code Google just sent (or press Enter to type it on the emulator):"
+                )
+              if (!code.isNullOrBlank() && askingEmail) {
+                ui.focusAndType(codeField, code.trim(), clearFirst = true)
                 ui.enter()
               } else if (!code.isNullOrBlank() && code.all { it.isLetterOrDigit() || it == '-' || it == ' ' }) {
-                ui.tap(codeField)
-                ui.type(code.replace(" ", "").replace("-", ""))
+                ui.focusAndType(codeField, code.replace(" ", "").replace("-", ""), clearFirst = true)
                 ui.enter()
               }
             }
@@ -231,7 +280,9 @@ public class GoogleSignIn(private val tools: AndroidTools = AndroidTools(), priv
               val index = helper.choose("How do you want to verify? (or press Enter to choose on the emulator)", options)
               if (index != null && index in methods.indices) {
                 ui.tap(methods[index])
-                if (options[index].contains("another phone", ignoreCase = true) || options[index].contains("another device", ignoreCase = true)) {
+                if (options[index].contains("another phone", ignoreCase = true) || options[index].contains("another device", ignoreCase = true) ||
+                  options[index].contains("Tap Yes", ignoreCase = true)
+                ) {
                   helper.notify("Approve the sign-in on your other device (phone or computer signed in to this account).")
                 }
               }
@@ -241,20 +292,38 @@ public class GoogleSignIn(private val tools: AndroidTools = AndroidTools(), priv
 
         clickable("TRY AGAIN", "Try again") != null -> {
           logger.info("Session expired; retrying")
-          typedEmail = false
-          typedPassword = false
+          emailAttempts = 0
+          passwordAttempts = 0
+          justSubmittedPassword = false
           chosenMethod = false
           ui.tap(clickable("TRY AGAIN", "Try again")!!)
         }
 
-        // Terms of service and Google services screens.
-        clickable("I agree", "I AGREE", "Agree", "AGREE", "Accept", "ACCEPT") != null -> ui.tap(clickable("I agree", "I AGREE", "Agree", "AGREE", "Accept", "ACCEPT")!!)
-        clickable("MORE", "More") != null -> ui.tap(clickable("MORE", "More")!!) // scrolls to reveal ACCEPT
-        clickable("Not now", "NOT NOW", "No thanks", "NO THANKS", "Skip", "SKIP", "Don't turn on", "Cancel") != null &&
-          (hasText("backup") || hasText("Back up") || hasText("recovery") || hasText("phone number") || hasText("payment")) ->
-          ui.tap(clickable("Not now", "NOT NOW", "No thanks", "NO THANKS", "Skip", "SKIP", "Don't turn on", "Cancel")!!)
+        // Regional / DMA personalization & service-linking choice screens.
+        (hasText("Choose your settings") || hasText("Before you continue") || hasText("Link your Google services")) &&
+          clickable("Reject all", "Keep current choices", "Confirm", "Save and continue", "Continue") != null ->
+          ui.tap(clickable("Reject all", "Keep current choices", "Confirm", "Save and continue", "Continue")!!)
 
-        else ->
+        // Optional post-sign-in prompts (contacts backup, device backup, recovery phone, passkey, payment).
+        clickable("Not now", "NOT NOW", "No thanks", "NO THANKS", "Skip", "SKIP", "Don't turn on", "DON'T TURN ON", "Cancel") != null &&
+          (hasText("backup") ||
+            hasText("Back up") ||
+            hasText("recovery") ||
+            hasText("phone number") ||
+            hasText("payment") ||
+            hasText("contacts") ||
+            hasText("sync") ||
+            hasText("passkey") ||
+            hasText("Simplify your sign-in")) ->
+          ui.tap(clickable("Not now", "NOT NOW", "No thanks", "NO THANKS", "Skip", "SKIP", "Don't turn on", "DON'T TURN ON", "Cancel")!!)
+
+        // Terms of service and Google Services screens ("More" scrolls to reveal "Accept").
+        clickable("I agree", "I AGREE", "Agree", "AGREE", "Accept", "ACCEPT") != null ->
+          ui.tap(clickable("I agree", "I AGREE", "Agree", "AGREE", "Accept", "ACCEPT")!!)
+        clickable("MORE", "More") != null -> ui.tap(clickable("MORE", "More")!!)
+        signedIn && clickable("Done", "DONE", "Close", "Got it") != null -> ui.tap(clickable("Done", "DONE", "Close", "Got it")!!)
+
+        !signedIn ->
           if (!handedOff && screen.isNotEmpty() && screen == lastScreen) {
             handedOff = true
             deadline = maxOf(deadline, TimeSource.Monotonic.markNow() + USER_VERIFICATION_WINDOW)
@@ -266,8 +335,9 @@ public class GoogleSignIn(private val tools: AndroidTools = AndroidTools(), priv
           }
       }
       lastScreen = screen
-      delay(if (typedEmail || typedPassword) 3_000 else 2_000)
+      delay(if (justSubmittedPassword || emailAttempts == 1) 3_000 else 2_000)
     }
+    if (hasAccount(device, account.email)) return null
     return if (verificationStarted) "Verification wasn't completed within ${USER_VERIFICATION_WINDOW.inWholeMinutes} minutes for ${account.email}"
     else "Timed out after $timeout signing in ${account.email} on ${device.serialNumber}"
   }
@@ -319,49 +389,62 @@ public class GoogleSignIn(private val tools: AndroidTools = AndroidTools(), priv
     // Emulated watches report "charging", and Wear OS then shows a full-screen charging UI over everything.
     if (watch.isEmulator()) watch.shell("dumpsys battery unplug")
     watch.shell("svc power stayon true; input keyevent 224; wm dismiss-keyguard")
-    watch.shell("am start -a android.settings.ADD_ACCOUNT_SETTINGS --esa account_types com.google")
-    var openedOnPhone = false
-    val deadline = TimeSource.Monotonic.markNow() + USER_VERIFICATION_WINDOW
-    while (deadline.hasNotPassedNow()) {
-      if (hasAccount(watch, account.email)) {
-        logger.info("${account.email} is on ${watch.serialNumber}")
-        if (watch.isEmulator()) watch.shell("dumpsys battery reset; svc power stayon false")
-        return null
-      }
-      val nodes = ui.nodes()
-      val add = nodes.firstOrNull { it.clickable && it.labelIs("Add Google Account", "Add account") }
-      val openOnPhone = nodes.firstOrNull { it.resourceId == "top_container" || (it.clickable && it.label?.contains("Open on phone", ignoreCase = true) == true) }
-      when {
-        !openedOnPhone && add != null -> ui.tap(add)
-        !openedOnPhone && openOnPhone != null -> {
-          ui.tap(openOnPhone)
-          openedOnPhone = true
-          logger.info("Opened the account copy on ${phone.serialNumber}")
+    try {
+      watch.shell("am start -a android.settings.ADD_ACCOUNT_SETTINGS --esa account_types com.google")
+      var openedOnPhone = false
+      val deadline = TimeSource.Monotonic.markNow() + USER_VERIFICATION_WINDOW
+      while (deadline.hasNotPassedNow()) {
+        if (hasAccount(watch, account.email)) {
+          logger.info("${account.email} is on ${watch.serialNumber}")
+          return null
         }
-      }
-      if (openedOnPhone) {
-        val p = phoneUi.nodes()
-        val pick = p.firstOrNull { it.label?.startsWith("Continue as") == true } ?: p.firstOrNull { it.label?.trim() == account.email && it.clickable }
+        val nodes = ui.nodes()
+        val add = nodes.findClickable("Add Google Account", "Add account")
+        val openOnPhone =
+          nodes.firstOrNull { it.resourceId == "top_container" }
+            ?: nodes.firstOrNull { it.clickable && it.label?.contains("Open on phone", ignoreCase = true) == true }
+            ?: nodes.findClickable("Open on phone")
         when {
-          p.any { it.label?.contains("Verify it", ignoreCase = true) == true || it.label?.contains("Unlock to continue", ignoreCase = true) == true } -> {
-            logger.info("Entering the phone's PIN")
-            phoneUi.type(EMULATOR_PIN)
-            phoneUi.enter()
+          nodes.any { it.resourceId == "aerr_wait" } -> ui.tap(nodes.first { it.resourceId == "aerr_wait" })
+          !openedOnPhone && add != null -> ui.tap(add)
+          !openedOnPhone && openOnPhone != null -> {
+            ui.tap(openOnPhone)
+            openedOnPhone = true
+            logger.info("Opened the account copy on ${phone.serialNumber}")
           }
-          pick != null -> {
-            logger.info("Choosing ${account.email} on ${phone.serialNumber}")
-            phoneUi.tap(pick)
-          }
-          p.any { it.resourceId == "aerr_wait" } -> phoneUi.tap(p.first { it.resourceId == "aerr_wait" })
         }
+        if (openedOnPhone) {
+          val p = phoneUi.nodes()
+          val pick =
+            p.firstOrNull { it.label?.startsWith("Continue as", ignoreCase = true) == true }
+              ?: p.firstOrNull { it.label?.trim().equals(account.email, ignoreCase = true) && it.clickable }
+              ?: p.findClickable(account.email, "Continue", "Copy")
+          when {
+            p.any { it.resourceId == "aerr_wait" } -> phoneUi.tap(p.first { it.resourceId == "aerr_wait" })
+            p.hasScreenText("Verify it") || p.hasScreenText("Unlock to continue") || p.hasScreenText("Confirm your PIN") || p.hasScreenText("Enter your PIN") -> {
+              logger.info("Entering the phone's PIN")
+              phoneUi.type(EMULATOR_PIN)
+              phoneUi.enter()
+            }
+            pick != null -> {
+              logger.info("Choosing ${account.email} on ${phone.serialNumber}")
+              phoneUi.tap(pick)
+            }
+          }
+        }
+        delay(3_000)
       }
-      delay(3_000)
+      return "${account.email} wasn't copied to ${watch.serialNumber} within ${USER_VERIFICATION_WINDOW.inWholeMinutes} minutes. " +
+        "Account copy needs a recent watch image (tested: Wear OS 7 / API 37 signed); older images fail during the transfer."
+    } finally {
+      withContext(NonCancellable) {
+        if (watch.isEmulator()) watch.shell("dumpsys battery reset; svc power stayon false")
+      }
     }
-    return "${account.email} wasn't copied to ${watch.serialNumber} within ${USER_VERIFICATION_WINDOW.inWholeMinutes} minutes. " +
-      "Account copy needs a recent watch image (tested: Wear OS 7 / API 37 signed); older images fail during the transfer."
   }
 
-  private suspend fun hasAccount(device: AdbDevice, email: String) = device.shell("dumpsys account").contains("name=$email,")
+  private suspend fun hasAccount(device: AdbDevice, email: String) =
+    device.shell("dumpsys account").contains("name=$email,", ignoreCase = true)
 
   private suspend fun readSecret(command: String): String {
     val result = tools.run(listOf("/bin/sh", "-c", command), timeoutSeconds = 120)
@@ -370,14 +453,61 @@ public class GoogleSignIn(private val tools: AndroidTools = AndroidTools(), priv
   }
 
   internal companion object {
+    private val CHROME_LABELS =
+      setOf("try another way", "more ways to sign in", "help", "learn more", "privacy", "terms", "back", "next", "cancel", "resend it")
+
+    /** True while post-sign-in wizard steps (Google Services, contacts sync, backup, passkey, consent) are still on screen. */
+    internal fun isPostSignInWizard(nodes: List<UiNode>): Boolean =
+      nodes.any { it.resourceId == "aerr_wait" } ||
+        nodes.hasScreenText("Google Services") ||
+        nodes.hasScreenText("Terms of Service") ||
+        nodes.hasScreenText("Never lose your contacts") ||
+        nodes.hasScreenText("Back up") ||
+        nodes.hasScreenText("Simplify your sign-in") ||
+        nodes.hasScreenText("Choose your settings") ||
+        nodes.hasScreenText("Before you continue") ||
+        nodes.hasScreenText("Checking info") ||
+        nodes.hasScreenText("Just a sec") ||
+        nodes.findClickable("I agree", "Agree", "Accept", "More") != null
+
+    /** Extracts `(deviceName, matchNumber)` from a Google device-approval prompt, even when WebView splits words across nodes. */
+    internal fun extractDevicePrompt(nodes: List<UiNode>): Pair<String, String?>? {
+      val combined = nodes.screenText()
+      val device =
+        nodes.firstNotNullOfOrNull { n -> n.label?.let { Regex("""^Check your (.+?)[.!]*$""", RegexOption.IGNORE_CASE).find(it.trim())?.groupValues?.get(1) } }
+          ?: Regex("""Check your ([A-Za-z0-9][A-Za-z0-9 _\-]{0,35}?)(?:[.!,]| Google| Tap| Open| to | and |$)""", RegexOption.IGNORE_CASE)
+            .find(combined)
+            ?.groupValues
+            ?.get(1)
+            ?.trim()
+          ?: if (nodes.hasScreenText("Tap Yes") || nodes.hasScreenText("Google sent a notification")) "phone or other signed-in device" else null
+      if (device == null) return null
+      val matchNumber =
+        Regex("""\btap (?:the number )?(\d{1,3})\b""", RegexOption.IGNORE_CASE).find(combined)?.groupValues?.get(1)
+          ?: nodes.firstNotNullOfOrNull { n -> n.label?.trim()?.takeIf { Regex("""^\d{1,3}$""").matches(it) && n.y > 120 } }
+      return device to matchNumber
+    }
+
+    /** Returns selectable verification method rows, excluding navigation/help links. */
+    internal fun extractVerificationMethods(nodes: List<UiNode>): List<UiNode> =
+      nodes.filter { node ->
+        val label = node.label?.trim() ?: return@filter false
+        node.clickable &&
+          label.length >= 6 &&
+          label.lowercase() !in CHROME_LABELS &&
+          !label.startsWith("Learn more", ignoreCase = true) &&
+          !label.equals("Verify it's you", ignoreCase = true) &&
+          !label.equals("2-Step Verification", ignoreCase = true)
+      }
+
     /** Drops masked contact details (e.g. "y•••@ex••••.••", "•••• 12") so they aren't printed or logged. */
     fun sanitizeMethod(label: String): String {
-      val masked = label.split(' ').any { '•' in it }
+      val masked = label.split(' ').any { '•' in it || '*' in it }
       return when {
         !masked -> label
         label.contains("code", ignoreCase = true) && label.contains('@') -> "Get a verification code by email"
         label.contains("code", ignoreCase = true) -> "Get a verification code by text message"
-        else -> label.split(' ').filterNot { '•' in it }.joinToString(" ").trim()
+        else -> label.split(' ').filterNot { '•' in it || '*' in it }.joinToString(" ").trim()
       }
     }
   }

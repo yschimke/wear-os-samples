@@ -7,8 +7,8 @@ Agent instructions: [skills/wear-emulator-pairing/SKILL.md](skills/wear-emulator
 
 | Step | Result |
 |---|---|
-| Pair a Google Play phone (API 37) with a Wear OS 7 watch (API 37.0 signed) | ✅ |
-| `wear-pair sign-in <watch>`, starting from a **locked** watch | ✅ account on the watch in ~55 s |
+| Install Google Pixel Watch companion from Play Store (`--test-account` / `--play`) + pair (API 37 Play phone + API 37.0 signed watch) | ✅ non-interactive attempt 1 |
+| `wear-pair sign-in <watch>`, starting from a freshly wiped or **locked** watch | ✅ account on the watch in ~55 s |
 | Same with watch API 34 or API 36 (Play services 24.x / 25.x) | ❌ transfer fails partway through; use the API 37.0 signed image |
 
 ## Setup on macOS
@@ -16,7 +16,7 @@ Agent instructions: [skills/wear-emulator-pairing/SKILL.md](skills/wear-emulator
 1. **Prerequisites:**
    - JDK 17+ (tested with JDK 21).
    - Android SDK at `~/Library/Android/sdk`, or set `ANDROID_HOME`.
-   - The **Android CLI** (`android`) on `PATH` or at `~/.local/bin/android`. Used for UI automation (`android layout`) on the phone and watch.
+   - The **Android CLI** (`android`) on `PATH` or at `~/.local/bin/android` (falls back to `uiautomator dump` over `adb` when absent).
 2. **System images:** use `arm64-v8a` on Apple silicon (`x86_64` on Intel). Note `android-37.0` (not `android-37`):
    ```bash
    sdkmanager "system-images;android-37.0;android-wear-signed;arm64-v8a" \

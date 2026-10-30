@@ -15,12 +15,17 @@
  */
 package com.example.android.wearable.emulatorpairing.companion
 
+import com.example.android.wearable.emulatorpairing.tools.AndroidUi
+import com.example.android.wearable.emulatorpairing.tools.findClickable
+import com.example.android.wearable.emulatorpairing.tools.hasScreenText
 import java.nio.file.Files
 import kotlin.io.path.writeText
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class CompanionTest {
   @Test
@@ -43,15 +48,73 @@ class CompanionTest {
   @Test
   fun parsesLayoutNodes() {
     val nodes =
-      com.example.android.wearable.emulatorpairing.tools.AndroidUi.parseLayout(
+      AndroidUi.parseLayout(
         """[{"interactions":["clickable","focusable","password"],"state":["focused"],"center":"[539,707]"},
            {"text":"NEXT","interactions":["clickable"],"center":"[911,1333]"},
-           {"interactions":["clickable"],"center":"[539,829]","resource-id":"identifierId"}]"""
+           {"interactions":["clickable"],"center":"[539,829]","resource-id":"android:id/identifierId"}]"""
       )
     assertEquals(3, nodes.size)
-    assert(nodes[0].isPassword && nodes[0].focused)
-    assert(nodes[1].labelIs("next"))
+    assertTrue(nodes[0].isPassword && nodes[0].focused)
+    assertTrue(nodes[1].labelIs("next"))
     assertEquals("identifierId", nodes[2].resourceId)
+  }
+
+  @Test
+  fun matchesPerWordWebViewScreenTextAndComposeChildButtons() {
+    val nodes =
+      AndroidUi.parseLayout(
+        """[{"text":"Sign","center":"[200,400]"},
+           {"text":"in","center":"[310,400]"},
+           {"text":"with","center":"[410,400]"},
+           {"text":"ease","center":"[520,400]"},
+           {"interactions":["clickable","focusable"],"center":"[180,1950]"},
+           {"text":"Skip","center":"[180,1950]"}]"""
+      )
+    assertTrue(nodes.hasScreenText("Sign in with ease"))
+    assertEquals(180 to 1950, nodes.findClickable("SKIP", "Skip")?.let { it.x to it.y })
+  }
+
+  @Test
+  fun parsesUiAutomatorXmlAndStripsResourceIdPackage() {
+    val xml =
+      """UI hierchary dumped to: /data/local/tmp/wp_ui.xml
+         <?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+         <hierarchy rotation="0">
+           <node text="System UI isn&apos;t responding" resource-id="android:id/alertTitle" clickable="false" bounds="[100,1050][980,1150]" />
+           <node text="Wait" resource-id="android:id/aerr_wait" clickable="true" focusable="true" bounds="[100,1300][980,1420]" />
+           <node text="" resource-id="" clickable="true" bounds="[64,1135][1017,1261]">
+             <node text="Install" resource-id="" clickable="false" bounds="[432,1171][534,1224]" />
+           </node>
+         </hierarchy>"""
+    val nodes = AndroidUi.parseUiAutomatorXml(xml)
+    assertEquals("aerr_wait", nodes.firstOrNull { it.labelIs("Wait") }?.resourceId)
+    assertEquals(483 to 1197, nodes.findClickable("Install")?.let { it.x to it.y })
+  }
+
+  @Test
+  fun escapesSingleQuotesAndSpacesForShellInput() {
+    assertEquals("'pa'\\''ss%sword'", AndroidUi.escapeForShellInput("pa'ss word"))
+  }
+
+  @Test
+  fun extractsDevicePromptAndFiltersVerificationMethods() {
+    val splitNodes =
+      AndroidUi.parseLayout(
+        """[{"text":"2-Step","center":"[200,300]"},{"text":"Verification","center":"[450,300]"},
+           {"text":"Check","center":"[180,500]"},{"text":"your","center":"[290,500]"},{"text":"Pixel","center":"[410,500]"},{"text":"9.","center":"[510,500]"},
+           {"text":"42","center":"[540,900]"}]"""
+      )
+    assertEquals("Pixel 9" to "42", GoogleSignIn.extractDevicePrompt(splitNodes))
+
+    val methodNodes =
+      AndroidUi.parseLayout(
+        """[{"text":"Verify it's you","interactions":["clickable"],"center":"[540,300]"},
+           {"text":"Tap Yes on your phone or tablet","interactions":["clickable"],"center":"[540,700]"},
+           {"content-desc":"Get a verification code at y•••@gmail.com","interactions":["clickable"],"center":"[540,900]"},
+           {"text":"Try another way","interactions":["clickable"],"center":"[220,1400]"},
+           {"text":"Learn more about 2-Step Verification","interactions":["clickable"],"center":"[540,1600]"}]"""
+      )
+    assertEquals(2, GoogleSignIn.extractVerificationMethods(methodNodes).size)
   }
 
   @Test
@@ -77,6 +140,18 @@ class CompanionTest {
   }
 
   @Test
+  fun findsComposeSplitPlayStoreInstallButton() {
+    val layout =
+      """[{"interactions":["clickable","focusable"],"center":"[540,1198]"},
+         {"text":"Install on phone.","center":"[899,1281]"},
+         {"content-desc":"Install","center":"[483,1197]"},
+         {"interactions":["clickable","focusable"],"center":"[954,1197]"},
+         {"text":"Install","center":"[483,1197]"},
+         {"content-desc":"Install on more devices","center":"[954,1197]"}]"""
+    assertEquals(Triple("Install", 483, 1197), CompanionInstaller.findClickable(layout, setOf("Install", "Update")))
+  }
+
+  @Test
   fun findsUnlabeledPlayStoreInstallButton() {
     val layout =
       """[{"interactions":["clickable","focusable"],"center":"[540,1185]"},
@@ -84,5 +159,31 @@ class CompanionTest {
          {"interactions":["clickable","focusable"],"center":"[540,1872]"}]"""
     val found = CompanionInstaller.findClickable(layout, setOf("Install", "Update"))!!
     assertEquals(1185, found.third)
+  }
+
+  @Test
+  fun classifiesPlayStoreStatesWithoutTappingCancel() {
+    val downloading =
+      AndroidUi.parseLayout(
+        """[{"text":"Google Pixel Watch","center":"[599,405]"},
+           {"content-desc":"35%","center":"[160,647]"},
+           {"text":"Verified by Play Protect","center":"[420,647]"},
+           {"text":"Cancel","interactions":["clickable"],"center":"[293,800]"},
+           {"text":"Open","center":"[786,800]"}]"""
+      )
+    assertIs<PlayStoreAction.InProgress>(CompanionInstaller.classifyPlayStoreScreen(downloading, autoTapInstall = true))
+
+    val staleSignIn =
+      AndroidUi.parseLayout("""[{"text":"Sign in","interactions":["clickable"],"center":"[540,1200]"}]""")
+    assertEquals(PlayStoreAction.RefreshSignedInPlayStore, CompanionInstaller.classifyPlayStoreScreen(staleSignIn, autoTapInstall = true))
+
+    val skipPayment =
+      AndroidUi.parseLayout(
+        """[{"text":"Complete account setup","center":"[540,500]"},
+           {"text":"Add payment method","center":"[540,900]"},
+           {"text":"Skip","interactions":["clickable"],"center":"[250,1800]"}]"""
+      )
+    val tap = assertIs<PlayStoreAction.Tap>(CompanionInstaller.classifyPlayStoreScreen(skipPayment, autoTapInstall = true))
+    assertEquals("skip-payment", tap.reason)
   }
 }

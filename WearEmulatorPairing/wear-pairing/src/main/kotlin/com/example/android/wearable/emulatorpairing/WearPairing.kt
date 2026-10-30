@@ -25,7 +25,10 @@ import com.example.android.wearable.emulatorpairing.companion.CompanionSource
 import com.example.android.wearable.emulatorpairing.companion.EMULATOR_PIN
 import com.example.android.wearable.emulatorpairing.companion.describe
 import com.example.android.wearable.emulatorpairing.tools.AndroidTools
+import com.example.android.wearable.emulatorpairing.tools.AndroidUi
 import com.example.android.wearable.emulatorpairing.tools.EmulatorControl
+import com.example.android.wearable.emulatorpairing.tools.findClickable
+import com.example.android.wearable.emulatorpairing.tools.hasScreenText
 import java.io.IOException
 import java.net.ServerSocket
 import kotlin.time.Duration
@@ -240,17 +243,26 @@ public class WearPairing(
     onProgress(PairingProgress.Bridged(hostPort))
 
     var lastCompanionState: CompanionPairingState? = null
+    val consent = TermsConsentState(approved = options.acceptCompanionTerms)
     if (!waitForPaired(phone, watch, 5.seconds)) {
       var paired = false
       if (phone.hasPairingFeature(PairingFeature.COMPANION_EMULATOR_ACTIVITY, companionAppId)) {
         val watchName = sanitizeName(watch.avdName() ?: watch.getProperty("ro.product.model") ?: watch.serialNumber)
         for (attempt in 1..(1 + options.nonInteractiveRetries)) {
-          logger.info("Non-interactive pairing attempt $attempt via $companionAppId/.EmulatorActivity (watch '$watchName')")
           if (attempt > 1) watch.refreshEmulatorConnection(logger)
+          var watchNodeId = watch.loadNodeID()
+          if (watchNodeId.isEmpty()) {
+            waitForCondition(15_000, pollMillis = 1_000) { watch.loadNodeID().also { watchNodeId = it }.isNotEmpty() }
+          }
+          if (watchNodeId.isEmpty()) {
+            logger.warn("Watch ${watch.serialNumber} still has no Wearable node id; skipping EmulatorActivity attempt $attempt")
+            break
+          }
+          logger.info("Non-interactive pairing attempt $attempt via $companionAppId/.EmulatorActivity (watch '$watchName', node '$watchNodeId')")
           kotlinx.coroutines.coroutineScope {
-            val screens = launch { tendCompanionScreens(phone) }
+            val screens = launch { tendCompanionScreens(phone, consent, onProgress) }
             withTimeoutOrNull(options.nonInteractivePairingTimeout) {
-              phone.companionEmulatorPairing(companionAppId, watchName, watch.loadNodeID()).collect {
+              phone.companionEmulatorPairing(companionAppId, watchName, watchNodeId).collect {
                 lastCompanionState = it
                 onProgress(PairingProgress.CompanionState(it, attempt))
               }
@@ -261,7 +273,7 @@ public class WearPairing(
             paired = true
             break
           }
-          if (lastCompanionState == CompanionPairingState.CANCELLED) break // The user cancelled; don't loop.
+          if (lastCompanionState == CompanionPairingState.CANCELLED || (consent.blocked && !consent.approved)) break
         }
       }
       if (!paired) {
@@ -270,14 +282,19 @@ public class WearPairing(
         // monkey avoids having to know each companion's launcher activity.
         phone.shell("monkey -p $companionAppId -c android.intent.category.LAUNCHER 1")
         val manualPaired = kotlinx.coroutines.coroutineScope {
-          val screens = launch { tendCompanionScreens(phone) }
+          val screens = launch { tendCompanionScreens(phone, consent, onProgress) }
           waitForPaired(phone, watch, options.manualPairingTimeout, pollMillis = 2_000).also { screens.cancel() }
         }
         if (!manualPaired) {
+          val termsFixes =
+            if (lastCompanionState == CompanionPairingState.CONSENT || consent.blocked) {
+              listOf("Re-run with `--accept-terms` to accept the companion app's Terms of Service (with the account owner's consent), or pass `--window` to accept on screen")
+            } else emptyList()
           return PairingResult.NotPaired(
             hostPort,
             lastCompanionState,
-            mismatchFixes(phone) +
+            termsFixes +
+              mismatchFixes(phone) +
               listOf(
                 "Finish pairing in the companion app on ${phone.serialNumber}, then run `wear-pair status`",
                 "Retry with `wear-pair unpair` then `wear-pair pair`",
@@ -292,30 +309,69 @@ public class WearPairing(
     return PairingResult.Paired(hostPort, companionAppId, needsSkipAndFinish)
   }
 
+  private class TermsConsentState(var approved: Boolean, var asked: Boolean = false, var blocked: Boolean = false)
+
   /**
-   * Runs alongside companion pairing: dismisses "isn't responding" dialogs (Wait) on slow emulators and, with
-   * [PairingOptions.acceptCompanionTerms], accepts the Terms of Service screen with all optional checkboxes unchecked.
+   * Runs alongside companion pairing: dismisses "isn't responding" dialogs (Wait) on slow emulators, grants runtime permission
+   * dialogs, and (with [PairingOptions.acceptCompanionTerms] or interactive approval) accepts the Terms of Service screen with all
+   * optional checkboxes unchecked.
    */
-  private suspend fun tendCompanionScreens(phone: AdbDevice) {
-    val ui = com.example.android.wearable.emulatorpairing.tools.AndroidUi(tools, phone)
-    if (!ui.available) return
+  private suspend fun tendCompanionScreens(phone: AdbDevice, consent: TermsConsentState, onProgress: (PairingProgress) -> Unit) {
+    val ui = AndroidUi(tools, phone)
     while (true) {
       val nodes = ui.nodes()
-      val wait = nodes.firstOrNull { it.resourceId == "aerr_wait" }
-      val accept = nodes.firstOrNull { it.clickable && it.resourceId?.endsWith("terms_of_service_accept_button") == true }
-      val checked = nodes.filter { it.resourceId == "checkbox" && "checkable" in it.interactions && "checked" in it.state }
+      val wait = nodes.firstOrNull { it.resourceId == "aerr_wait" } ?: if (nodes.hasScreenText("isn't responding")) nodes.findClickable("Wait") else null
+      val permAllow =
+        nodes.firstOrNull {
+          it.clickable &&
+            (it.resourceId?.endsWith("permission_allow_button") == true ||
+              it.resourceId?.endsWith("permission_allow_foreground_only_button") == true)
+        }
+      val accept =
+        nodes.firstOrNull { it.clickable && it.resourceId?.endsWith("terms_of_service_accept_button") == true }
+          ?: if (nodes.hasScreenText("Terms of Service")) nodes.findClickable("More", "Accept", "I agree", "Agree") else null
+      val checked =
+        nodes.filter {
+          it.checkable &&
+            it.checked &&
+            (it.resourceId == "checkbox" || it.resourceId?.contains("checkbox", ignoreCase = true) == true)
+        }
       when {
         wait != null -> {
           logger.info("Dismissing an app-not-responding dialog (Wait)")
           ui.tap(wait)
         }
-        accept != null && options.acceptCompanionTerms && checked.isNotEmpty() -> {
-          logger.info("Unchecking optional: ${checked.mapNotNull { it.contentDesc }.joinToString()}")
+        permAllow != null -> {
+          logger.info("Granting companion runtime permission (${permAllow.label ?: permAllow.resourceId})")
+          ui.tap(permAllow)
+        }
+        accept != null && !consent.approved && !consent.asked -> {
+          consent.asked = true
+          val choice =
+            options.signInHelper?.choose(
+              "The companion app is showing its Terms of Service on ${phone.serialNumber}. Accept with all optional checkboxes unchecked?",
+              listOf("Accept Terms of Service (optional boxes unchecked)", "Do not accept automatically"),
+            )
+          if (choice == 0) {
+            consent.approved = true
+          } else {
+            consent.blocked = true
+            onProgress(
+              PairingProgress.Companion(
+                CompanionInstallEvent.UserActionRequired(
+                  "Accept the companion app's Terms of Service on ${phone.serialNumber}, or re-run with --accept-terms (only with the account owner's consent)"
+                )
+              )
+            )
+          }
+        }
+        accept != null && consent.approved && checked.isNotEmpty() -> {
+          logger.info("Unchecking optional: ${checked.mapNotNull { it.label }.joinToString()}")
           checked.forEach { ui.tap(it) }
         }
-        accept != null && options.acceptCompanionTerms -> {
-          // "More" scrolls the terms; the same button becomes "Accept" at the end.
-          logger.info("Companion terms: tapping ${accept.label}")
+        accept != null && consent.approved -> {
+          // "More" scrolls the terms; the same button becomes "Accept" / "I agree" at the end.
+          logger.info("Companion terms: tapping ${accept.label ?: "Accept"}")
           ui.tap(accept)
         }
       }
@@ -412,9 +468,12 @@ public class WearPairing(
     phone.createForward(hostPort, WEARABLE_EMULATOR_PORT)
     watch.createReverse(WEARABLE_EMULATOR_PORT, hostPort)
     watch.refreshEmulatorConnection(logger)
-    if ((companionAppId ?: watch.getCompanionAppIdForWatch(logger)) == PIXEL_COMPANION_APP_ID) {
-      // BLUETOOTH_CONNECT is required for the Pixel companion to pair; `pm clear` removes it.
-      phone.grantPermission(PIXEL_COMPANION_APP_ID, "android.permission.BLUETOOTH_CONNECT")
+    val resolvedCompanion = companionAppId ?: watch.getCompanionAppIdForWatch(logger)
+    if (phone.isCompanionAppInstalled(resolvedCompanion)) {
+      // Runtime permissions required for the companion app to pair without blocking on system dialogs; `pm clear` removes them.
+      for (perm in listOf("android.permission.BLUETOOTH_CONNECT", "android.permission.BLUETOOTH_SCAN", "android.permission.POST_NOTIFICATIONS")) {
+        phone.grantPermission(resolvedCompanion, perm)
+      }
     }
     return hostPort
   }

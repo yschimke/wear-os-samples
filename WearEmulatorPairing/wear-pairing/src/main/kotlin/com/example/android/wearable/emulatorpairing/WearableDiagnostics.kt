@@ -15,6 +15,7 @@
  */
 package com.example.android.wearable.emulatorpairing
 
+import com.example.android.wearable.emulatorpairing.companion.EMULATOR_PIN
 import com.example.android.wearable.emulatorpairing.tools.AndroidTools
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -65,7 +66,10 @@ public suspend fun AdbDevice.rebootAndWait(tools: AndroidTools, timeout: Duratio
   tools.run(tools.requireAdb(), "-s", serialNumber, "reboot", timeoutSeconds = 60)
   delay(5_000)
   val booted = waitForCondition(timeout.inWholeMilliseconds, pollMillis = 3_000) { isBootCompleted() }
-  if (booted) waitForCondition(60_000, pollMillis = 2_000) { loadNodeID().isNotEmpty() }
+  if (booted) {
+    if (isEmulator() && isLocked()) unlockWithPin(EMULATOR_PIN)
+    waitForCondition(60_000, pollMillis = 2_000) { loadNodeID().isNotEmpty() }
+  }
   return booted
 }
 

@@ -76,21 +76,25 @@ public class AdbDevice(public val session: AdbSession, public val serialNumber: 
   public suspend fun unlockWithPin(pin: String): Boolean {
     if (!isLocked()) return true
     if (!shell("dumpsys lock_settings | grep -m1 CredentialType").contains("PIN")) return false
-    // One shell call, so the PIN screen can't time out between steps on a slow host.
-    shell("input keyevent KEYCODE_WAKEUP; wm dismiss-keyguard; sleep 1; input text $pin; input keyevent KEYCODE_ENTER")
-    if (waitUnlocked()) return true
-    // Some lock screens (e.g. Wear OS's PIN pad) ignore typed text; tap the digit buttons instead.
-    shell("input keyevent KEYCODE_WAKEUP; wm dismiss-keyguard; sleep 1")
+    // KEYCODE_MENU (82) opens the PIN bouncer on phone lock screens where `wm dismiss-keyguard` stays on the clock screen.
+    shell("input keyevent KEYCODE_WAKEUP; wm dismiss-keyguard; input keyevent 82; sleep 1; input text $pin; input keyevent KEYCODE_ENTER")
+    if (waitUnlocked(seconds = 6)) return true
+    // Wear OS cold-boot shows `bootup_lockscreen` over the PIN pad (and ignores `input text`); swipe up to reveal the bouncer, then tap digits.
+    val (w, h) = Regex("""(\d+)x(\d+)""").find(shell("wm size"))?.destructured?.let { (a, b) -> a.toInt() to b.toInt() } ?: (384 to 384)
+    shell("input keyevent KEYCODE_WAKEUP; input swipe ${w / 2} ${h * 4 / 5} ${w / 2} ${h / 6} 300; sleep 1")
     val dump = shell("uiautomator dump /data/local/tmp/wp_lock.xml >/dev/null && cat /data/local/tmp/wp_lock.xml")
     val keys = Regex("""text="(\d)"[^>]*?bounds="\[(\d+),(\d+)]\[(\d+),(\d+)]"""").findAll(dump)
       .associate { m -> val (d, l, t, r, b) = m.destructured; d to "${(l.toInt() + r.toInt()) / 2} ${(t.toInt() + b.toInt()) / 2}" }
-    if (pin.any { it.toString() !in keys }) return false
-    shell(pin.toList().joinToString("; ") { "input tap ${keys.getValue(it.toString())}" } + "; input keyevent KEYCODE_ENTER")
-    return waitUnlocked()
+    if (pin.all { it.toString() in keys }) {
+      shell(pin.toList().joinToString("; ") { "input tap ${keys.getValue(it.toString())}" } + "; input keyevent KEYCODE_ENTER")
+    } else {
+      shell("input text $pin; input keyevent KEYCODE_ENTER")
+    }
+    return waitUnlocked(seconds = 8)
   }
 
-  private suspend fun waitUnlocked(): Boolean {
-    repeat(10) {
+  private suspend fun waitUnlocked(seconds: Int = 10): Boolean {
+    repeat(seconds) {
       if (!isLocked()) return true
       delay(1_000)
     }
